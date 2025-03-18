@@ -1,4 +1,6 @@
 import sys
+import numpy as np
+import sounddevice as sd
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -9,7 +11,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QDoubleSpinBox,
     QSpinBox,
-    QPushButton
+    QPushButton,
+    QButtonGroup
 )
 from PySide6.QtCore import Qt
 
@@ -61,12 +64,39 @@ class ArpeggiatorWidget(QWidget):
         self.note_length_slider.valueChanged.connect(self.on_note_length_slider_changed)
         self.note_length_spin.valueChanged.connect(self.on_note_length_spin_changed)
 
-        # ==================== ACTIVATION BUTTONS (replacing Number of Variants) ====================
-        # We'll have three pressable lights (buttons) for Variant 1, 2, 3 activation.
-        # Each is green when active, red when inactive.
-        # By default, only Variant 1 is active (green); 2 & 3 are inactive (red).
-        
-        # Container layout
+        # ==================== MODE (Up, Down, Random) EXCLUSIVE BUTTONS ====================
+        self.mode_layout = QHBoxLayout()
+
+        # Create a button group for exclusive checkable buttons
+        self.mode_button_group = QButtonGroup(self)
+        self.mode_button_group.setExclusive(True)
+
+        self.btn_up = QPushButton("Up")
+        self.btn_down = QPushButton("Down")
+        self.btn_random = QPushButton("Random")
+
+        # Make them checkable
+        self.btn_up.setCheckable(True)
+        self.btn_down.setCheckable(True)
+        self.btn_random.setCheckable(True)
+
+        # Add them to the button group
+        self.mode_button_group.addButton(self.btn_up)
+        self.mode_button_group.addButton(self.btn_down)
+        self.mode_button_group.addButton(self.btn_random)
+
+        # Set default selection: "Up"
+        self.btn_up.setChecked(True)
+
+        # Add them horizontally
+        self.mode_layout.addWidget(self.btn_up)
+        self.mode_layout.addWidget(self.btn_down)
+        self.mode_layout.addWidget(self.btn_random)
+
+        # Add row to form layout
+        form_layout.addRow("Mode:", self.mode_layout)
+
+        # ==================== ACTIVATION BUTTONS (Variants Active) ====================
         activation_layout = QHBoxLayout()
 
         self.variant1_button = QPushButton("Variant 1")
@@ -87,15 +117,13 @@ class ArpeggiatorWidget(QWidget):
         self.update_button_color(self.variant3_button, False)
         self.variant3_button.toggled.connect(lambda checked: self.update_button_color(self.variant3_button, checked))
 
-        # Add them side by side
         activation_layout.addWidget(self.variant1_button)
         activation_layout.addWidget(self.variant2_button)
         activation_layout.addWidget(self.variant3_button)
 
-        # We add a "Activation" row to the form layout
         form_layout.addRow("Variants Active:", activation_layout)
 
-        # ==================== 4) Variant 1 [-24..24, integer steps] ====================
+        # ==================== Variant Offsets: -24..24, integer steps ====================
         self.variant1_slider = QSlider(Qt.Orientation.Horizontal)
         self.variant1_slider.setRange(-24, 24)
         self.variant1_slider.setValue(0)
@@ -112,7 +140,6 @@ class ArpeggiatorWidget(QWidget):
         self.variant1_slider.valueChanged.connect(self.on_variant1_slider_changed)
         self.variant1_spin.valueChanged.connect(self.on_variant1_spin_changed)
 
-        # ==================== 5) Variant 2 [-24..24, integer steps] ====================
         self.variant2_slider = QSlider(Qt.Orientation.Horizontal)
         self.variant2_slider.setRange(-24, 24)
         self.variant2_slider.setValue(0)
@@ -129,7 +156,6 @@ class ArpeggiatorWidget(QWidget):
         self.variant2_slider.valueChanged.connect(self.on_variant2_slider_changed)
         self.variant2_spin.valueChanged.connect(self.on_variant2_spin_changed)
 
-        # ==================== 6) Variant 3 [-24..24, integer steps] ====================
         self.variant3_slider = QSlider(Qt.Orientation.Horizontal)
         self.variant3_slider.setRange(-24, 24)
         self.variant3_slider.setValue(0)
@@ -148,10 +174,20 @@ class ArpeggiatorWidget(QWidget):
 
         main_layout.addLayout(form_layout)
         self.setLayout(main_layout)
-        self.setWindowTitle("Arpeggiator (Discrete Steps + Variant Activation)")
+        self.setWindowTitle("Arpeggiator (Mode + Variant Activation)")
+
+    
+    # ---------------------------------------------------------------------------------------
+    # Do button plays a note Do
+    # ---------------------------------------------------------------------------------------
+        self.btn_do = QPushButton("Do")
+        self.btn_do.clicked.connect(self.play_do_note)
+
+        form_layout.addRow(self.btn_do)
+
 
     # ---------------------------------------------------------------------------------------
-    # Helper to change button color based on check state (green if checked, red if unchecked)
+    # Helper to change button color for Variant toggles
     # ---------------------------------------------------------------------------------------
     def update_button_color(self, button: QPushButton, checked: bool):
         if checked:
@@ -235,6 +271,21 @@ class ArpeggiatorWidget(QWidget):
         self.variant3_slider.blockSignals(True)
         self.variant3_slider.setValue(spin_value)
         self.variant3_slider.blockSignals(False)
+
+
+    #---------------------------------------------------------------------------------------
+    # Play note Do
+    # ---------------------------------------------------------------------------------------
+    def play_do_note(self):
+        frequency = 261.63  
+        duration = self.note_length_spin.value() * 10
+        sample_rate = 44100  
+
+        t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+        audio_signal = 0.5 * np.sin(2 * np.pi * frequency * t) 
+
+        # Jouer le son avec sounddevice
+        sd.play(audio_signal, samplerate=sample_rate)
 
 
 def main():
