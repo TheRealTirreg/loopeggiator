@@ -1,6 +1,10 @@
 import sys
 import numpy as np
 import sounddevice as sd
+import pygame.midi
+import time
+import subprocess
+import fluidsynth
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -12,14 +16,38 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QSpinBox,
     QPushButton,
-    QButtonGroup
+    QButtonGroup,
+    QComboBox
 )
 from PySide6.QtCore import Qt
+
+
+
+class SynthPlayer:
+    def __init__(self, soundfont_path):
+        self.fs = fluidsynth.Synth()
+        self.fs.start()
+        self.sfid = self.fs.sfload(soundfont_path)  # Charger la soundfont
+        self.fs.program_select(0, self.sfid, 0, 0)  # Banque 0, preset 0 par défaut
+    
+    def set_instrument(self, bank=0, preset=0):
+        self.fs.program_select(0, self.sfid, bank, preset)
+    
+    def play_note(self, midi_note, duration=1.0, velocity=100):
+        self.fs.noteon(0, midi_note, velocity)
+        time.sleep(duration)
+        self.fs.noteoff(0, midi_note)
+
+    def close(self):
+        self.fs.delete()
+
 
 
 class ArpeggiatorWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.synth = SynthPlayer("/usr/share/sounds/sf2/FluidR3_GM.sf2")
+        self.synth.set_instrument(0, 0)
 
         main_layout = QVBoxLayout()
         form_layout = QFormLayout()
@@ -181,11 +209,29 @@ class ArpeggiatorWidget(QWidget):
     # Do button plays a note Do
     # ---------------------------------------------------------------------------------------
         self.btn_do = QPushButton("Do")
-        self.btn_do.clicked.connect(lambda: self.play_note(261.63))
+        self.btn_do.clicked.connect(lambda: self.play_note_pygame(60))
 
         form_layout.addRow(self.btn_do)
 
 
+       
+    # ---------------------------------------------------------------------------------------
+    # Liste instruments
+    # ---------------------------------------------------------------------------------------
+
+
+        self.instrument_combo = QComboBox()
+        self.instrument_combo.addItem("Piano", 0)       # Acoustic Grand Piano (ID 0)
+        self.instrument_combo.addItem("Guitare", 24)    # Acoustic Guitar (nylon) (ID 24)
+        self.instrument_combo.addItem("Flûte", 73)      # Flute (ID 73)
+        self.instrument_combo.currentIndexChanged.connect(self.change_instrument)
+
+        form_layout.addRow("Instrument:", self.instrument_combo)
+
+
+    def change_instrument(self, index):
+        instrument_id = self.instrument_combo.itemData(index)
+        self.synth.set_instrument(0, instrument_id)
     # ---------------------------------------------------------------------------------------
     # Helper to change button color for Variant toggles
     # ---------------------------------------------------------------------------------------
@@ -314,6 +360,14 @@ class ArpeggiatorWidget(QWidget):
         sd.wait()
 
 
+    #version third avec pygame
+    def play_note_pygame(self, note):
+        
+        midi_note = note
+        duree = self.note_length_slider.value() 
+        self.synth.play_note(midi_note, duree, velocity=100)
+
+
     # ---------------------------------------------------------------------------------------
     # First arpeggio
     #----------------------------------------------------------------------------------------
@@ -322,46 +376,73 @@ class ArpeggiatorWidget(QWidget):
         if self.btn_up.isChecked():
             
             for i in range(3):
-                self.play_note(f)
-                self.play_note(self.notes_freq[(self.notes_freq.index(f)+2) % 8])
+                self.play_note_pygame(f)
+                self.play_note_pygame(self.notes_freq[(self.notes_freq.index(f)+2) % 8])
                 
         
         else:
             print("Not implemented yet")
-            self.play_note(f)
+            self.play_note_pygame(f)
 
+    # Définir les notes en MIDI
+    notes_midi = [60, 62, 64, 65, 67, 69, 71, 72]  # Do, Ré, Mi, Fa, Sol, La, Si, Do
+
+    def third2(self, note):
+        if isinstance(note, float):
+            idx = self.notes_freq.index(note)
+            note_midi = self.notes_midi[idx]
+        else:
+            note_midi = note
+            idx = self.notes_midi.index(note_midi)
+            
+        if self.btn_up.isChecked():
+            for i in range(3):
+                self.play_note_pygame(note_midi)
+                # Jouer une tierce majeure (4 demi-tons plus haut)
+                next_idx = (idx + 2) % 8
+                self.play_note_pygame(self.notes_midi[next_idx])
+        else:
+            print("Not implemented yet")
+            self.play_note_pygame(note_midi)
     # ---------------------------------------------------------------------------------------
     # Keyboard shortcuts
     # ---------------------------------------------------------------------------------------
+        
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_C:  # Touche "C" → Do
-            self.third(261.63)
+            self.third2(60)
             #self.play_note(261.63)
         elif event.key() == Qt.Key_D:  # Touche "D" → Ré
-            self.third(293.66)
+            self.third2(self.notes_midi[1])
             #self.play_note(293.66)
         elif event.key() == Qt.Key_E:  # Touche "E" → Mi
-            self.third(329.63)
+            self.third2(self.notes_midi[2])
             #self.play_note(329.63)
         elif event.key() == Qt.Key_F:  # Touche "F" → Fa
-            self.third(349.23)
+            self.third2(self.notes_midi[3])
             #self.play_note(349.23)
         elif event.key() == Qt.Key_G:  # Touche "G" → Sol
-            self.third(392.00)
+            self.third2(self.notes_midi[4])
             #self.play_note(392.00)
         elif event.key() == Qt.Key_A:  # Touche "A" → La
-            self.third(440.00)
+            self.third2(self.notes_midi[5])
             #self.play_note(440.00)
         elif event.key() == Qt.Key_B:  # Touche "B" → Si
-            self.third(493.88)
+            self.third2(self.notes_midi[6])
             #self.play_note(493.88)
         elif event.key() == Qt.Key_N:  # Touche "N" → Do (octave supérieur)
-            self.third(523.25)
+            self.third2(notes_midi[7])
             #self.play_note(523.25)
         else:
             super().keyPressEvent(event)
 
     
+    def closeEvent(self, event):
+    # Nettoyer les ressources FluidSynth avant de fermer
+        if hasattr(self, 'synth'):
+            self.synth.close()
+        super().closeEvent(event)
 
 def main():
     app = QApplication(sys.argv)
