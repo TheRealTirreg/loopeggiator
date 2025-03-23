@@ -1,10 +1,9 @@
 import sys
 import numpy as np
 import sounddevice as sd
-import pygame.midi
 import time
-import subprocess
 import fluidsynth
+from concurrent.futures import ThreadPoolExecutor
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -23,24 +22,30 @@ from PySide6.QtCore import Qt
 
 
 
+
 class SynthPlayer:
     def __init__(self, soundfont_path):
         self.fs = fluidsynth.Synth()
         self.fs.start()
         self.sfid = self.fs.sfload(soundfont_path)  # Charger la soundfont
         self.fs.program_select(0, self.sfid, 0, 0)  # Banque 0, preset 0 par défaut
+        self.threadpool = ThreadPoolExecutor(max_workers=4)
     
     def set_instrument(self, bank=0, preset=0):
         self.fs.program_select(0, self.sfid, bank, preset)
     
     def play_note(self, midi_note, duration=1.0, velocity=100):
+        print(f"Playing note {midi_note} for {duration} seconds")
+        self.threadpool.submit(self.play_note_threaded, midi_note, duration, velocity)
+
+    def play_note_threaded(self, midi_note, duration, velocity):
         self.fs.noteon(0, midi_note, velocity)
         time.sleep(duration)
         self.fs.noteoff(0, midi_note)
 
     def close(self):
         self.fs.delete()
-
+        self.threadpool.shutdown()
 
 
 class ArpeggiatorWidget(QWidget):
@@ -323,20 +328,23 @@ class ArpeggiatorWidget(QWidget):
     # Play note
     # ---------------------------------------------------------------------------------------
     
-    def ADSR(self, duree, fe, A, D, S, R): # fonction créant une enveloppe ADSR
-        t = np.linspace(0, duree, int(duree*fe))
-        envelope = np.zeros(len(t))
-        for i in range(0, len(t)):
-            if t[i] < A:
-                envelope[i] = t[i]/A
-            elif t[i] < A+D:
-                envelope[i] = 1 - (1-S)*(t[i]-A)/D
-            elif t[i] < duree-R:
-                envelope[i] = S
-            else:
-                envelope[i] = S - S*(t[i]-(duree-R))/R
-        
-        return envelope
+    def ADSR(A, D, S, R, f_s, duree_s):
+        # Créér enveloppe
+        t = int(duree_s * f_s)
+        enveloppe = np.zeros(t)
+
+        # Calculer indices pour transitions
+        A_idx = int(A * t)
+        D_idx = A_idx + int(D * t)
+        S_idx = D_idx + int(S * t)
+        R_idx = S_idx + int(R * t)
+
+        # Appliquer les phases
+        enveloppe[:A_idx] = np.linspace(0, 1, A_idx)
+        enveloppe[A_idx:D_idx] = np.linspace(1, S, D_idx - A_idx)
+        enveloppe[D_idx:S_idx] = S
+        enveloppe[S_idx:R_idx] = np.linspace(S, 0, R_idx - S_idx)
+        return enveloppe
 
 
     def play_note(self, frequency):
@@ -344,10 +352,10 @@ class ArpeggiatorWidget(QWidget):
         duree = self.note_length_slider.value()  
         sample_rate = 44100  
 
-        attack_time = 0.05
+        attack_time = 0.1
         decay_time = 0.1
         sustain_level = 0.7
-        release_time = 0.2
+        release_time = 0.1
 
         envelope = self.ADSR(duree, sample_rate, attack_time, decay_time, sustain_level, release_time)
 
@@ -362,7 +370,7 @@ class ArpeggiatorWidget(QWidget):
 
     #version third avec pygame
     def play_note_pygame(self, note):
-        
+        print(f"Playing note {note} using pygame")
         midi_note = note
         duree = self.note_length_slider.value() 
         self.synth.play_note(midi_note, duree, velocity=100)
@@ -436,6 +444,7 @@ class ArpeggiatorWidget(QWidget):
             #self.play_note(523.25)
         else:
             super().keyPressEvent(event)
+
 
     
     def closeEvent(self, event):
