@@ -79,13 +79,13 @@ class ArpeggiatorWidget(QWidget):
         # ==================== 2) Note Length [0..1, step=0.1] ====================
         self.note_length_slider = QSlider(Qt.Orientation.Horizontal)
         self.note_length_slider.setRange(0, 10)  # each step => 0.1
-        self.note_length_slider.setValue(5)      # default = 0.5
+        self.note_length_slider.setValue(2)      # default = 0.2
         
         self.note_length_spin = QDoubleSpinBox()
         self.note_length_spin.setRange(0.0, 1.0)
         self.note_length_spin.setDecimals(1)
         self.note_length_spin.setSingleStep(0.1)
-        self.note_length_spin.setValue(0.5)
+        self.note_length_spin.setValue(0.2)
 
         row_layout_note_length = QHBoxLayout()
         row_layout_note_length.addWidget(self.note_length_slider)
@@ -216,13 +216,9 @@ class ArpeggiatorWidget(QWidget):
 
         form_layout.addRow(self.btn_do)
 
-
-       
     # ---------------------------------------------------------------------------------------
     # Liste instruments
     # ---------------------------------------------------------------------------------------
-
-
         self.instrument_combo = QComboBox()
         self.instrument_combo.addItem("Piano", 0)       # Acoustic Grand Piano (ID 0)
         self.instrument_combo.addItem("Guitare", 24)    # Acoustic Guitar (nylon) (ID 24)
@@ -231,10 +227,10 @@ class ArpeggiatorWidget(QWidget):
 
         form_layout.addRow("Instrument:", self.instrument_combo)
 
-
     def change_instrument(self, index):
         instrument_id = self.instrument_combo.itemData(index)
         self.synth.set_instrument(0, instrument_id)
+
     # ---------------------------------------------------------------------------------------
     # Helper to change button color for Variant toggles
     # ---------------------------------------------------------------------------------------
