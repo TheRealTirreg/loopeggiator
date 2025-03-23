@@ -49,15 +49,7 @@ class SynthPlayer:
 class ArpeggiatorWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        try:
-            self.synth = SynthPlayer("/usr/share/sounds/sf2/FluidR3_GM.sf2")
-        except Exception as e:
-            print(f"Error loading soundfont: {e}")
-            print("Have you installed fluidsynth and the soundfont?")
-            print("On Ubuntu, you can install them with:")
-            print("sudo apt install fluidsynth fluid-soundfont-gm")
-            print("For other systems, edit the python script to point to the correct soundfont path.")
-            self.synth = None
+        self.synth = SynthPlayer("/usr/share/sounds/sf2/FluidR3_GM.sf2")
         self.synth.set_instrument(0, 0)
 
         main_layout = QVBoxLayout()
