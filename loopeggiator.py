@@ -1,5 +1,4 @@
 import sys
-
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -17,9 +16,8 @@ from PySide6.QtWidgets import (
     QSizePolicy
 )
 from PySide6.QtCore import Qt, QSize
-
-# Assuming arp.py is also PySide6-based:
-from arp import ArpeggiatorWidget
+from arpygo import ArpeggiatorWidget
+from synthplayer import SynthPlayer
 
 
 class ArpeggiatorBlockWidget(QWidget):

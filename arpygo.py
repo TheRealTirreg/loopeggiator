@@ -1,9 +1,6 @@
 import sys
 import numpy as np
 import sounddevice as sd
-import time
-import fluidsynth
-from concurrent.futures import ThreadPoolExecutor
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -19,38 +16,14 @@ from PySide6.QtWidgets import (
     QComboBox
 )
 from PySide6.QtCore import Qt
-
-
-class SynthPlayer:
-    def __init__(self, soundfont_path):
-        self.fs = fluidsynth.Synth()
-        self.fs.start()
-        self.sfid = self.fs.sfload(soundfont_path)  # Charger la soundfont
-        self.fs.program_select(0, self.sfid, 0, 0)  # Banque 0, preset 0 par défaut
-        self.threadpool = ThreadPoolExecutor(max_workers=4)
-    
-    def set_instrument(self, bank=0, preset=0):
-        self.fs.program_select(0, self.sfid, bank, preset)
-    
-    def play_note(self, midi_note, duration=1.0, velocity=100):
-        print(f"Playing note {midi_note} for {duration} seconds")
-        self.threadpool.submit(self.play_note_threaded, midi_note, duration, velocity)
-
-    def play_note_threaded(self, midi_note, duration, velocity):
-        self.fs.noteon(0, midi_note, velocity)
-        time.sleep(duration)
-        self.fs.noteoff(0, midi_note)
-
-    def close(self):
-        self.fs.delete()
-        self.threadpool.shutdown()
+from synthplayer import SynthPlayer
 
 
 class ArpeggiatorWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.synth = SynthPlayer("/usr/share/sounds/sf2/FluidR3_GM.sf2")
-        self.synth.set_instrument(0, 0)
+        self.synth.add_channel(0, 0)  # Add piano to first looper
 
         main_layout = QVBoxLayout()
         form_layout = QFormLayout()
@@ -229,7 +202,8 @@ class ArpeggiatorWidget(QWidget):
 
     def change_instrument(self, index):
         instrument_id = self.instrument_combo.itemData(index)
-        self.synth.set_instrument(0, instrument_id)
+        print(f"Instrument: {instrument_id}")
+        self.synth.add_channel(0, instrument_id)
 
     # ---------------------------------------------------------------------------------------
     # Helper to change button color for Variant toggles
@@ -340,50 +314,15 @@ class ArpeggiatorWidget(QWidget):
         enveloppe[S_idx:R_idx] = np.linspace(S, 0, R_idx - S_idx)
         return enveloppe
 
-
-    def play_note(self, frequency):
-        
-        duree = self.note_length_slider.value()  
-        sample_rate = 44100  
-
-        attack_time = 0.1
-        decay_time = 0.1
-        sustain_level = 0.7
-        release_time = 0.1
-
-        envelope = self.ADSR(duree, sample_rate, attack_time, decay_time, sustain_level, release_time)
-
-        t = np.linspace(0, duree, int(sample_rate * duree), endpoint=False)
-        audio_signal = 0.5 * np.sin(2 * np.pi * frequency * t)  
-
-        audio_signal_with_envelope = audio_signal * envelope
-
-        sd.play(audio_signal_with_envelope, samplerate=sample_rate)
-        sd.wait()
-
-
     #version third avec pygame
     def play_note_pygame(self, note):
         midi_note = note
         duree = self.note_length_slider.value() 
         self.synth.play_note(midi_note, duree, velocity=100)
 
-
     # ---------------------------------------------------------------------------------------
     # First arpeggio
     #----------------------------------------------------------------------------------------
-    notes_freq = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25]
-    def third(self, f):
-        if self.btn_up.isChecked():
-            
-            for i in range(3):
-                self.play_note_pygame(f)
-                self.play_note_pygame(self.notes_freq[(self.notes_freq.index(f)+2) % 8])
-                
-        
-        else:
-            print("Not implemented yet")
-            self.play_note_pygame(f)
 
     # Définir les notes en MIDI
     notes_midi = [60, 62, 64, 65, 67, 69, 71, 72]  # Do, Ré, Mi, Fa, Sol, La, Si, Do
@@ -438,8 +377,6 @@ class ArpeggiatorWidget(QWidget):
         else:
             super().keyPressEvent(event)
 
-
-    
     def closeEvent(self, event):
     # Nettoyer les ressources FluidSynth avant de fermer
         if hasattr(self, 'synth'):
