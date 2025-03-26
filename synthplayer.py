@@ -17,17 +17,22 @@ class SynthPlayer:
         bank: 0 = normal instrument, 128 = percussion
         preset: select instrument (0=Piano, 40=Violin, ...)
         """
+        print(f"Add channel {self.num_channels}")
         self.fs.program_select(self.num_channels, self.sfid, bank, preset)
         self.num_channels += 1
-    
-    def play_note(self, midi_note, duration=1.0, velocity=100):
-        print(f"Playing note {midi_note} for {duration} seconds")
-        self.threadpool.submit(self.play_note_threaded, midi_note, duration, velocity)
 
-    def play_note_threaded(self, midi_note, duration, velocity):
-        self.fs.noteon(0, midi_note, velocity)
+    def change_instrument(self, channel, instrument, bank=0):
+        print(f"Change instrument on channel {channel} to {instrument}")
+        self.fs.program_select(channel, self.sfid, bank, instrument)
+    
+    def play_note(self, midi_note, duration=1.0, velocity=100, channel=0):
+        print(f"Playing note {midi_note} for {duration} seconds on channel {channel}")
+        self.threadpool.submit(self.play_note_threaded, midi_note, duration, velocity, channel)
+
+    def play_note_threaded(self, midi_note, duration, velocity, channel):
+        self.fs.noteon(channel, midi_note, velocity)
         time.sleep(duration)
-        self.fs.noteoff(0, midi_note)
+        self.fs.noteoff(channel, midi_note)
 
     def close(self):
         self.fs.delete()

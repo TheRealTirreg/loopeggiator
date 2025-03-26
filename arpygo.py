@@ -22,8 +22,6 @@ from synthplayer import SynthPlayer
 class ArpeggiatorWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.synth = SynthPlayer("/usr/share/sounds/sf2/FluidR3_GM.sf2")
-        self.synth.add_channel(0, 0)  # Add piano to first looper
 
         main_layout = QVBoxLayout()
         form_layout = QFormLayout()
@@ -203,7 +201,7 @@ class ArpeggiatorWidget(QWidget):
     def change_instrument(self, index):
         instrument_id = self.instrument_combo.itemData(index)
         print(f"Instrument: {instrument_id}")
-        self.synth.add_channel(0, instrument_id)
+        self.synth.change_instrument(0, instrument_id)
 
     # ---------------------------------------------------------------------------------------
     # Helper to change button color for Variant toggles

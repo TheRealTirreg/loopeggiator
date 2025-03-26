@@ -20,6 +20,15 @@ from arpygo import ArpeggiatorWidget
 from synthplayer import SynthPlayer
 
 
+INSTRUMENTS = {
+    "Piano": 0,
+    "Guitar": 24,
+    "Flute": 73
+}
+
+# TODO: Handle instrument selection here.
+# Synthplayer should
+
 class ArpeggiatorBlockWidget(QWidget):
     """
     A small widget containing:
@@ -79,8 +88,13 @@ class InstrumentRowWidget(QWidget):
       - Narrow left side for Mute/Volume/Instrument selection
       - Horizontal list of ArpeggiatorBlockWidget(s) + a (+) button at the end
     """
-    def __init__(self, instrument_name="Instrument", parent=None):
+    def __init__(self, synth, instrument_row_id, parent=None):
         super().__init__(parent)
+
+        self.synth = synth
+        self.id = instrument_row_id
+        self.instrument = 0
+        self.synth.add_channel()
 
         # This row should also shrink to fit, not fill horizontally.
         self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum))
@@ -112,17 +126,25 @@ class InstrumentRowWidget(QWidget):
         volume_layout.addWidget(volume_label)
         volume_layout.addWidget(self.volume_slider)
 
+        # Play Do Button
+        self.btn_do = QPushButton("Do")
+        self.btn_do.clicked.connect(lambda: self.synth.play_note(60, 1, channel=self.id))
+
         # Instrument combo
         instrument_label = QLabel("Instrument:")
         self.instrument_combo = QComboBox()
-        self.instrument_combo.addItems(["Piano", "Guitar", "Synth", "Violin"])
+        self.instrument_combo.addItem("Piano", 0)       # Acoustic Grand Piano (ID 0)
+        self.instrument_combo.addItem("Guitare", 24)    # Acoustic Guitar (nylon) (ID 24)
+        self.instrument_combo.addItem("Flûte", 73)      # Flute (ID 73)
         self.instrument_combo.setCurrentIndex(0)
+        self.instrument_combo.currentIndexChanged.connect(self.change_instrument)
 
         # Add them to settings_layout
         settings_layout.addWidget(self.mute_checkbox)
         settings_layout.addLayout(volume_layout)
         settings_layout.addWidget(instrument_label)
         settings_layout.addWidget(self.instrument_combo)
+        settings_layout.addWidget(self.btn_do)
         settings_layout.addStretch()
 
         # ---------- Horizontal area for Arpeggiator blocks ----------
@@ -154,6 +176,10 @@ class InstrumentRowWidget(QWidget):
         self.arps_layout.addWidget(new_block)
 
         self.arps_layout.addWidget(self.btn_add_arp)
+    
+    def change_instrument(self, index):
+        instrument = self.instrument_combo.itemData(index)
+        self.synth.change_instrument(self.id, instrument)  # bank=0
 
 
 class LoopArpeggiatorMainWindow(QMainWindow):
@@ -164,6 +190,10 @@ class LoopArpeggiatorMainWindow(QMainWindow):
       - A button at the bottom to add more instruments
     """
     def __init__(self):
+        # ===================== Functionality ========================
+        self.synth = SynthPlayer("/usr/share/sounds/sf2/FluidR3_GM.sf2")
+
+        # ==================== Layout ================
         super().__init__()
         self.setWindowTitle("Loop Arpeggiator")
         self.resize(1200, 600)
@@ -193,10 +223,10 @@ class LoopArpeggiatorMainWindow(QMainWindow):
 
         self.setCentralWidget(scroll_area)
 
-    def add_instrument(self):
-        row = InstrumentRowWidget(instrument_name=f"Instrument {len(self.instrument_rows) + 1}")
-        self.instrument_rows.append(row)
 
+    def add_instrument(self):
+        row = InstrumentRowWidget(self.synth, len(self.instrument_rows))
+        self.instrument_rows.append(row)
         # Insert it above the "Add Instrument" button in the layout
         # (i.e. place it just before the last widget in vlayout)
         index_for_button = self.vlayout.count() - 1
