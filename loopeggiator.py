@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QSizePolicy
 )
 from PySide6.QtCore import Qt, QSize
-from arpygo import ArpeggiatorWidget
+from arp_widget import ArpeggiatorWidget
 from synthplayer import SynthPlayer
 
 
@@ -25,9 +25,6 @@ INSTRUMENTS = {
     "Guitar": 24,
     "Flute": 73
 }
-
-# TODO: Handle instrument selection here.
-# Synthplayer should
 
 class ArpeggiatorBlockWidget(QWidget):
     """
