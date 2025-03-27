@@ -13,9 +13,13 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
     QScrollArea,
-    QSizePolicy
+    QSizePolicy,
+    QStyle
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QShortcut, QKeySequence
+
+from top_bar import TopBarWidget
 from arp_widget import ArpeggiatorWidget
 from synthplayer import SynthPlayer
 
@@ -182,6 +186,7 @@ class InstrumentRowWidget(QWidget):
 class LoopArpeggiatorMainWindow(QMainWindow):
     """
     A main window with:
+      - A top bar (play/stop button, BPM spin, save/load buttons)
       - A single QScrollArea for everything (so only one horizontal scrollbar)
       - A vertical list of InstrumentRowWidgets inside that scroll area
       - A button at the bottom to add more instruments
@@ -190,12 +195,28 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         # ===================== Functionality ========================
         self.synth = SynthPlayer("/usr/share/sounds/sf2/FluidR3_GM.sf2")
 
-        # ==================== Layout ================
+        # ==================== Base Window Setup =====================
         super().__init__()
         self.setWindowTitle("Loop Arpeggiator")
         self.resize(1200, 600)
 
-        # A container widget that will hold all the instrument rows + bottom button
+        # ============================================================
+        # Create a top-level widget with a vertical layout.
+        # The top bar goes at the top, then the QScrollArea underneath.
+        # ============================================================
+        main_widget = QWidget()
+        self.main_layout = QVBoxLayout(main_widget)
+        self.main_layout.setContentsMargins(5, 5, 5, 5)
+
+        # ============================================================
+        # 1) TOP BAR
+        # ============================================================
+        self.top_bar = TopBarWidget()
+        self.main_layout.addWidget(self.top_bar)
+        
+        # ============================================================
+        # 2) CENTRAL AREA (scrollable Instrument rows + "Add Instrument")
+        # ============================================================
         self.container = QWidget()
         self.vlayout = QVBoxLayout(self.container)
         self.vlayout.setContentsMargins(5, 5, 5, 5)
@@ -203,7 +224,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         # We'll keep a list of row widgets
         self.instrument_rows = []
 
-        # "Add Instrument" button
+        # "Add Instrument" button at bottom
         self.btn_add_instrument = QPushButton("Add Instrument")
         self.btn_add_instrument.clicked.connect(self.add_instrument)
 
@@ -213,19 +234,27 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         # Then add the button at the bottom
         self.vlayout.addWidget(self.btn_add_instrument, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        # Put the container inside a single QScrollArea (one scrollbar for everything)
+        # Put the container inside a single QScrollArea
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.container)
 
-        self.setCentralWidget(scroll_area)
+        # Add the scroll area to main_layout
+        self.main_layout.addWidget(scroll_area)
 
+        # Finally, set main_widget as the central widget
+        self.setCentralWidget(main_widget)
+
+    def on_play_toggled(self, checked):
+        """Switch between play and stop icons depending on toggle state."""
+        if checked:
+            self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
+        else:
+            self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
 
     def add_instrument(self):
         row = InstrumentRowWidget(self.synth, len(self.instrument_rows))
         self.instrument_rows.append(row)
-        # Insert it above the "Add Instrument" button in the layout
-        # (i.e. place it just before the last widget in vlayout)
         index_for_button = self.vlayout.count() - 1
         self.vlayout.insertWidget(index_for_button, row)
 
