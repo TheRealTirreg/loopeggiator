@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy
 )
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt
 from arp_widget import ArpeggiatorWidget
 from synthplayer import SynthPlayer
 
