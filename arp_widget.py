@@ -38,6 +38,7 @@ class ArpeggiatorWidget(QWidget):
             default_variants
         )
 
+        # Layout
         main_layout = QVBoxLayout()
         form_layout = QFormLayout()
 

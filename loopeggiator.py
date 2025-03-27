@@ -37,7 +37,11 @@ class ArpeggiatorBlockWidget(QWidget):
       - One ArpeggiatorWidget
       - Surrounded by a tight QFrame
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, repetitions=1, id=0):
+        self.id = id
+        self.iteration = 0  # Current iteration of the arpeggiator, up to repetitions - 1
+
+        # ========================= Layout Setup =========================
         super().__init__(parent)
 
         # Let this widget shrink to fit content (rather than fill spare space).
@@ -63,7 +67,7 @@ class ArpeggiatorBlockWidget(QWidget):
         loop_label = QLabel("Loop count:")
         self.loop_spin = QSpinBox()
         self.loop_spin.setRange(1, 16)
-        self.loop_spin.setValue(3)
+        self.loop_spin.setValue(self.repetitions)
         loop_layout.addWidget(loop_label)
         loop_layout.addWidget(self.loop_spin)
         loop_layout.addStretch()
@@ -82,25 +86,31 @@ class ArpeggiatorBlockWidget(QWidget):
         # Finally, put the frame in the outer layout
         outer_layout.addWidget(frame)
 
+    @property
+    def repetitions(self):
+        """Get the total loop count"""
+        return self.loop_spin.value()
+
+    def get_arpeggio(self, bpm, instrument):
+        """Get mido note list for this arpeggiator"""
+        return self.arp_widget.get_arpeggio(bpm, instrument)
+
 
 class InstrumentRowWidget(QWidget):
     """
     One “instrument row”:
       - Narrow left side for Mute/Volume/Instrument selection
       - Horizontal list of ArpeggiatorBlockWidget(s) + a (+) button at the end
+
+      - Holds at least one, but potentially many ArpeggiatorBlockWidget(s)
+      - Plays the arpeggios of each arp block in after each other
     """
     def __init__(self, synth, instrument_row_id, parent=None):
+        # ========================= Layout Setup =========================
         super().__init__(parent)
-
-        self.synth = synth
-        self.id = instrument_row_id
-        self.instrument = 0
-        self.synth.add_channel()
 
         # This row should also shrink to fit, not fill horizontally.
         self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum))
-
-        self.arp_blocks = []
 
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
@@ -156,7 +166,7 @@ class InstrumentRowWidget(QWidget):
         # “Add Arpeggiator” button at the end
         self.btn_add_arp = QPushButton("+")
         self.btn_add_arp.setToolTip("Add another Arpeggiator block")
-        self.btn_add_arp.clicked.connect(self.add_arpeggiator_block)
+        self.btn_add_arp.clicked.connect(lambda: self.add_arpeggiator_block(repetitions=1))
 
         # Put the button in first. New blocks get inserted before it.
         self.arps_layout.addWidget(self.btn_add_arp)
@@ -165,22 +175,57 @@ class InstrumentRowWidget(QWidget):
         main_layout.addWidget(settings_frame)
         main_layout.addLayout(self.arps_layout)
 
-        # Add an initial ArpeggiatorBlock by default
-        self.add_arpeggiator_block()
+        # ========================= Functionality ========================
 
-    def add_arpeggiator_block(self):
+        # Set the synth with instrument
+        self.synth = synth
+        self.id = instrument_row_id
+        self.instrument = 0  # Default Piano
+        self.synth.add_channel()
+
+        self.arp_blocks = []  # List of ArpeggiatorBlockWidget(s) in this row
+        self.arp_queue = []  # Queue of arpeggios to play. E.g. if ArpWidget1 has 2 repetitions, add this to the queue 2 times
+        self.arp_queue_idx = 0  # Hold idx of arp_queue. Start with the first arpeggiator
+
+        # Add an initial ArpeggiatorBlock by default
+        self.add_arpeggiator_block(repetitions=1)
+
+    def add_arpeggiator_block(self, repetitions):
         # Insert a new ArpeggiatorBlockWidget before the "+" button
         self.arps_layout.removeWidget(self.btn_add_arp)
 
-        new_block = ArpeggiatorBlockWidget()
+        arp_id = len(self.arp_blocks)
+        new_block = ArpeggiatorBlockWidget(repetitions=repetitions, id=arp_id)
         self.arp_blocks.append(new_block)
+
+        # Add the index of the new block to the queue for each repetition
+        for i in range(repetitions):
+            self.arp_queue.append(arp_id)
+        
+        # Add the new block to the layout
         self.arps_layout.addWidget(new_block)
 
+        # Reinsert the "+" button at the end
         self.arps_layout.addWidget(self.btn_add_arp)
     
     def change_instrument(self, index):
         instrument = self.instrument_combo.itemData(index)
         self.synth.change_instrument(self.id, instrument)  # bank=0
+
+    def get_next_arpeggio(self, bpm):
+        """
+        Get arpeggio of the next arpeggio in line
+        """
+        # Get the current arpeggio
+        arp_id = self.arp_queue[self.arp_queue_idx]
+        arpeggio = self.arp_blocks[arp_id].get_arpeggio(bpm, self.instrument)
+
+        # Increment the arp_queue_idx, and wrap around if necessary
+        self.arp_queue_idx += 1
+        if self.arp_queue_idx >= len(self.arp_queue):
+            self.arp_queue_idx = 0
+
+        return arpeggio
 
 
 class LoopArpeggiatorMainWindow(QMainWindow):
@@ -213,7 +258,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         # ============================================================
         self.top_bar = TopBarWidget()
         self.main_layout.addWidget(self.top_bar)
-        
+
         # ============================================================
         # 2) CENTRAL AREA (scrollable Instrument rows + "Add Instrument")
         # ============================================================
