@@ -1,4 +1,5 @@
 import sys
+import mido
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -16,8 +17,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QStyle
 )
-from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QShortcut, QKeySequence
+from PySide6.QtCore import Qt
 
 from top_bar import TopBarWidget
 from arp_widget import ArpeggiatorWidget
@@ -91,9 +91,10 @@ class ArpeggiatorBlockWidget(QWidget):
         """Get the total loop count"""
         return self.loop_spin.value()
 
-    def get_arpeggio(self, bpm, instrument):
+    def get_arpeggio(self, bpm, instrument) -> tuple[list[mido.Message], int]:
         """Get mido note list for this arpeggiator"""
-        return self.arp_widget.get_arpeggio(bpm, instrument)
+        arp, total_time = self.arp_widget.get_arpeggio(bpm, instrument)
+        return arp, total_time
 
 
 class InstrumentRowWidget(QWidget):
@@ -218,7 +219,7 @@ class InstrumentRowWidget(QWidget):
         """
         # Get the current arpeggio
         arp_id = self.arp_queue[self.arp_queue_idx]
-        arpeggio = self.arp_blocks[arp_id].get_arpeggio(bpm, self.instrument)
+        arpeggio, time = self.arp_blocks[arp_id].get_arpeggio(bpm, self.instrument)
 
         # Increment the arp_queue_idx, and wrap around if necessary
         self.arp_queue_idx += 1
@@ -290,12 +291,40 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         # Finally, set main_widget as the central widget
         self.setCentralWidget(main_widget)
 
+        # Playback thread
+        self.playback_thread = None
+
+        # Connect the play button to the playback function
+        self.top_bar.play_button.toggled.connect(self.on_play_toggled)
+
     def on_play_toggled(self, checked):
         """Switch between play and stop icons depending on toggle state."""
         if checked:
             self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
+            self.start_playback()
         else:
             self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+            self.stop_playback()
+
+    def start_playback(self):
+        if self.playback_thread and self.playback_thread.isRunning():
+            return  # already running
+
+        def get_bpm():
+            return self.top_bar.get_bpm()
+
+        self.playback_thread = PlaybackThread(
+            instrument_rows=self.instrument_rows,
+            get_bpm_func=get_bpm,
+            synth=self.synth
+        )
+        self.playback_thread.start()
+
+    def stop_playback(self):
+        if self.playback_thread:
+            self.playback_thread.stop()
+            self.playback_thread.wait()
+            self.playback_thread = None
 
     def add_instrument(self):
         row = InstrumentRowWidget(self.synth, len(self.instrument_rows))

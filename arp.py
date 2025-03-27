@@ -1,6 +1,7 @@
 from enum import Enum
 import mido
 import random
+from typing import Tuple
 
 
 class Mode(Enum):
@@ -34,7 +35,7 @@ class Arpeggiator():
         # e.g. [7, 5, 0] Describes the offset in relation to the gound note. Only relevant if variants_active is True
         self.variants = variants
 
-    def get_arpeggio(self, bpm, instrument):
+    def get_arpeggio(self, bpm, instrument) -> Tuple[list[mido.Message], int]:
         mido_obj = [
             mido.Message('program_change', program=instrument, time=0)  # Set instrument
         ]
@@ -67,7 +68,7 @@ class Arpeggiator():
             mido_obj.append(mido.Message('note_off', note=note, velocity=64, time=time + note_duration))
             time += time_step
         
-        return mido_obj
+        return mido_obj, time_step
 
 
 if __name__ == "__main__":
