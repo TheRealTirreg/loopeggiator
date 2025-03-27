@@ -17,7 +17,7 @@ class Arpeggiator():
         self.variants_active = variants_active
         self.variants = variants  # Describes the offset in relation to the gound note
 
-    def create_arp(self, bpm):
+    def get_arpeggio(self, bpm):
         pass
 
 

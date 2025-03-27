@@ -1,28 +1,91 @@
-from mido import Message, MidiFile, MidiTrack
 from PySide6.QtCore import Qt
+import time
+import fluidsynth
+from concurrent.futures import ThreadPoolExecutor
+import mido
 
 
-def play_midi_arp(duration_s, instruments, notes):
-    """
-    duration_s: duration of the whole arp
-    instruments: list of all instruments. For example, [0, 0] meaning two tracks of piano
-    notes: the notes of the current arpeggio for each instrument. E.g.: [[60], [60, 67]]
-           This wouls play C4 (60) for duration_s using the first instrument, 
-           and in parallel play first 60 for duration_s/2 and then 67 for duration_s/2 using instrument 2.
-    """
-    duration_s = 1  # test
-    notes = [60]  # test
-    instruments = [0]  # test
+class SynthPlayer:
+    def __init__(self, soundfont_path, bpm=100):
+        self.fs = fluidsynth.Synth()
+        self.fs.start()
+        self.sfid = self.fs.sfload(soundfont_path)  # Load the soundfont
+        self.fs.program_select(0, self.sfid, 0, 0)  # Bank 0, preset 0 by default
+        self.threadpool = ThreadPoolExecutor(max_workers=4)
+        self.num_channels = 0
+        self.bpm = bpm
 
-    mid = MidiFile(type=1)
-    for i in instruments:
-        track = MidiTrack()
-        mid.tracks.append(track)
+    def add_channel(self, bank=0, preset=0):
+        """
+        bank: 0 = normal instrument, 128 = percussion
+        preset: select instrument (0=Piano, 40=Violin, ...)
+        """
+        print(f"Add channel {self.num_channels}")
+        self.fs.program_select(self.num_channels, self.sfid, bank, preset)
+        self.num_channels += 1
 
-    for i, notes in enumerate(notes):
-        for note in notes:
-            mid.tracks[i].append(Message('note_on', note=note, velocity=64, time=0))
-            mid.tracks[i].append(Message('note_off', note=note, velocity=64, time=duration_s))
+    def change_instrument(self, channel, instrument, bank=0):
+        print(f"Change instrument on channel {channel} to {instrument}")
+        self.fs.program_select(channel, self.sfid, bank, instrument)
+
+    def play_note(self, midi_note, duration=1.0, velocity=100, channel=0):
+        print(f"Playing note {midi_note} for {duration} seconds on channel {channel}")
+        self.threadpool.submit(self.play_note_threaded, midi_note, duration, velocity, channel)
+
+    def play_note_threaded(self, midi_note, duration, velocity, channel):
+        self.fs.noteon(channel, midi_note, velocity)
+        time.sleep(duration)
+        self.fs.noteoff(channel, midi_note)
+
+    def play_midi(self, midi_messages):
+        """
+        Plays a list of MIDI messages in parallel.
+        Each track is played in a separate thread.
+
+        midi_messages: list of tracks, each track is a list of mido.Message
+        e.g. 
+        midi_messages = [
+            [Message('program_change', program=0, time=0), Message('note_on', note=60, velocity=64, time=0), ...],
+            [Message('program_change', program=40, time=0), Message('note_on', note=64, velocity=64, time=0), ...]
+        ]
+        """
+        # Loop through all tracks (which can have different instruments)
+        for channel, track in enumerate(midi_messages):
+            # Each track is played in a separate thread
+            self.threadpool.submit(self._play_track, track, channel)
+
+    def _play_track(self, track, channel):
+        for msg in track:
+            time.sleep(msg.time)
+            if msg.type == 'program_change':
+                self.fs.program_select(channel, self.sfid, 0, msg.program)
+            elif msg.type == 'note_on':
+                scaled_velocity = min(msg.velocity, 80)  # Avoid too loud notes (overmodulation)
+                self.fs.noteon(channel, msg.note, scaled_velocity)
+            elif msg.type == 'note_off':
+                self.fs.noteoff(channel, msg.note)
+
+    def close(self):
+        self.fs.delete()
+        self.threadpool.shutdown()
+
+
+midi_messages = [
+    [
+        mido.Message('program_change', program=0, time=0),  # Piano
+        mido.Message('note_on', note=60, velocity=64, time=0),  # Middle C
+        mido.Message('note_off', note=60, velocity=64, time=1),  # Release Middle C after 1 second
+    ],
+    [
+        mido.Message('program_change', program=40, time=0),  # Violin
+        mido.Message('note_on', note=64, velocity=64, time=0),  # E
+        mido.Message('note_off', note=64, velocity=64, time=1),  # Release E after 1 second
+    ]
+]
+player = SynthPlayer('/usr/share/sounds/sf2/FluidR3_GM.sf2')
+player.play_midi(midi_messages)
+
+
 
 # ====================================
 # ---------------------------------------------------------------------------------------
