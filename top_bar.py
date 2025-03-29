@@ -45,6 +45,11 @@ class TopBarWidget(QWidget):
         layout.addWidget(self.save_button)
         layout.addWidget(self.load_button)
 
+    @property
+    def bpm(self):
+        """Return the current BPM value."""
+        return self.rate_spin.value()
+
     def on_play_toggled(self, checked: bool):
         """Switch between the play and stop icon depending on toggle state."""
         if checked:

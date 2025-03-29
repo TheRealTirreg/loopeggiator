@@ -59,11 +59,12 @@ class PlaybackThread(QThread):
 
                 # If it's time to start row[i]'s next arpeggio:
                 if now >= self.start_times[i]:
+                    print("Starting arpeggio for row", i, flush=True)
                     # 1) Retrieve the next arpeggio (already stored)
                     arpeggio, arp_time = self.next_arpeggios[i]
 
                     # 2) Actually play it (non‐blocking or schedule, depending on your SynthPlayer)
-                    self.synth.play_midi_messages(arpeggio)  
+                    self.synth.play_midi([arpeggio])  
                     # or some scheduling approach that sets note on/off at the right times
 
                     # 3) Update row’s next start time

@@ -22,6 +22,7 @@ from PySide6.QtCore import Qt
 from top_bar import TopBarWidget
 from arp_widget import ArpeggiatorWidget
 from synthplayer import SynthPlayer
+from playback_thread import PlaybackThread
 
 
 INSTRUMENTS = {
@@ -93,7 +94,7 @@ class ArpeggiatorBlockWidget(QWidget):
 
     def get_arpeggio(self, bpm, instrument) -> tuple[list[mido.Message], int]:
         """Get mido note list for this arpeggiator"""
-        arp, total_time = self.arp_widget.get_arpeggio(bpm, instrument)
+        arp, total_time = self.arp_widget.arp.get_arpeggio(bpm, instrument)
         return arp, total_time
 
 
@@ -215,7 +216,7 @@ class InstrumentRowWidget(QWidget):
 
     def get_next_arpeggio(self, bpm):
         """
-        Get arpeggio of the next arpeggio in line
+        Get arpeggio of the next (arpeggio, play_time) in line
         """
         # Get the current arpeggio
         arp_id = self.arp_queue[self.arp_queue_idx]
@@ -226,7 +227,7 @@ class InstrumentRowWidget(QWidget):
         if self.arp_queue_idx >= len(self.arp_queue):
             self.arp_queue_idx = 0
 
-        return arpeggio
+        return arpeggio, time
 
 
 class LoopArpeggiatorMainWindow(QMainWindow):
@@ -300,10 +301,10 @@ class LoopArpeggiatorMainWindow(QMainWindow):
     def on_play_toggled(self, checked):
         """Switch between play and stop icons depending on toggle state."""
         if checked:
-            self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
+            self.top_bar.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
             self.start_playback()
         else:
-            self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+            self.top_bar.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
             self.stop_playback()
 
     def start_playback(self):
@@ -311,7 +312,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
             return  # already running
 
         def get_bpm():
-            return self.top_bar.get_bpm()
+            return self.top_bar.bpm
 
         self.playback_thread = PlaybackThread(
             instrument_rows=self.instrument_rows,
@@ -325,6 +326,11 @@ class LoopArpeggiatorMainWindow(QMainWindow):
             self.playback_thread.stop()
             self.playback_thread.wait()
             self.playback_thread = None
+        
+    def closeEvent(self, event):
+        """Called when the user closes the main window."""
+        self.stop_playback()
+        super().closeEvent(event)
 
     def add_instrument(self):
         row = InstrumentRowWidget(self.synth, len(self.instrument_rows))
@@ -338,7 +344,6 @@ def main():
     window = LoopArpeggiatorMainWindow()
     window.show()
     sys.exit(app.exec())
-
 
 if __name__ == "__main__":
     main()

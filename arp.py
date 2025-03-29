@@ -59,19 +59,19 @@ class Arpeggiator():
         # Not to be confused with note_duration
         # time_step is the time between each note in the arpeggio
         # note_duration is the time each note is played
-        time = 0
+        total_time = 0
         time_step = (60 / bpm) * self.rate
 
         # Append the note messages to the mido_obj
         for note in notes:
-            mido_obj.append(mido.Message('note_on', note=note, velocity=64, time=time))
-            mido_obj.append(mido.Message('note_off', note=note, velocity=64, time=time + note_duration))
-            time += time_step
+            mido_obj.append(mido.Message('note_on', note=note, velocity=64, time=total_time))
+            mido_obj.append(mido.Message('note_off', note=note, velocity=64, time=total_time + note_duration))
+            total_time += time_step
         
-        return mido_obj, time_step
+        return mido_obj, total_time
 
 
 if __name__ == "__main__":
-    arp = Arpeggiator(1, 0.5, 60, Mode.UP, [True, False, False], [7, 5, 0])
+    arp = Arpeggiator(1, 0.5, 60, Mode.UP, [False, False, False], [7, 5, 0])
     for msg in arp.get_arpeggio(120, 0):
         print(msg)

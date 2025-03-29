@@ -57,6 +57,9 @@ class SynthPlayer:
             self.threadpool.submit(self._play_track, track, channel)
 
     def _play_track(self, track, channel):
+        print(f"Playing on channel {channel}. Track:")
+        for msg in track:
+            print(msg)
         for msg in track:
             time.sleep(msg.time)
             if msg.type == 'program_change':
