@@ -1,3 +1,4 @@
+import os_check  # Ensures this script also works on Windows
 from PySide6.QtCore import Qt
 import time
 import fluidsynth
