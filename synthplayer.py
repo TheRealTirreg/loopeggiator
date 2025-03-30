@@ -51,24 +51,43 @@ class SynthPlayer:
             [Message('program_change', program=40, time=0), Message('note_on', note=64, velocity=64, time=0), ...]
         ]
         """
-        # Loop through all tracks (which can have different instruments)
+        # 1) Collect all events into a single list of (absolute_time, channel, msg).
+        #    We'll assume each track is assigned a unique channel index.
+        #    If your code has some other channel logic, adjust accordingly.
+        all_events = []
         for channel, track in enumerate(midi_messages):
-            # Each track is played in a separate thread
-            self.threadpool.submit(self._play_track, track, channel)
+            current_time = 0.0
+            for msg in track:
+                current_time += msg.time  # delta time from previous
+                all_events.append((current_time, channel, msg))
 
-    def _play_track(self, track, channel):
-        print(f"Playing on channel {channel}. Track:")
-        for msg in track:
-            print(msg)
-        for msg in track:
-            time.sleep(msg.time)
+        # 2) Sort by absolute_time
+        all_events.sort(key=lambda x: x[0])
+
+        # 3) Step through all events in chronological order
+        start_wall_time = time.time()
+        for i, (event_time, channel, msg) in enumerate(all_events):
+            # Wait until it's time for this event
+            # figure out how many seconds from now
+            now = time.time()
+            target_wall_time = start_wall_time + event_time
+            sleep_time = target_wall_time - now
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+
+            # Send the event to fluidsynth
+            # (Same logic as your old _play_track() code)
             if msg.type == 'program_change':
                 self.fs.program_select(channel, self.sfid, 0, msg.program)
             elif msg.type == 'note_on':
-                scaled_velocity = min(msg.velocity, 80)  # Avoid too loud notes (overmodulation)
+                scaled_velocity = min(msg.velocity, 80)
                 self.fs.noteon(channel, msg.note, scaled_velocity)
             elif msg.type == 'note_off':
                 self.fs.noteoff(channel, msg.note)
+
+            # Optional debug print
+            # (Will be in perfect chronological order)
+            print(f"[{time.time() - start_wall_time:.2f}] {msg}")
 
     def close(self):
         self.fs.delete()

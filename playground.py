@@ -75,15 +75,18 @@ midi_messages = [
     [
         mido.Message('program_change', program=0, time=0),  # Piano
         mido.Message('note_on', note=60, velocity=64, time=0),  # Middle C
-        mido.Message('note_off', note=60, velocity=64, time=1),  # Release Middle C after 1 second
+        mido.Message('note_off', note=60, velocity=64, time=1.5),  # Release Middle C after 1.5 seconds
     ],
     [
         mido.Message('program_change', program=40, time=0),  # Violin
         mido.Message('note_on', note=64, velocity=64, time=0),  # E
-        mido.Message('note_off', note=64, velocity=64, time=1),  # Release E after 1 second
+        mido.Message('note_off', note=64, velocity=64, time=1.5),  # Release E after 1.5 seconds
     ]
 ]
-player = SynthPlayer('/usr/share/sounds/sf2/FluidR3_GM.sf2')
+path = r"C:\tools\fluidsynth\soundfonts\FluidR3_GM.sf2"
+# path = '/usr/share/sounds/sf2/FluidR3_GM.sf2'
+print(f"using path {path}")
+player = SynthPlayer(path)
 player.play_midi(midi_messages)
 
 

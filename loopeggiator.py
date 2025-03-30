@@ -1,4 +1,7 @@
 import sys
+import platform
+import argparse
+
 import mido
 from PySide6.QtWidgets import (
     QApplication,
@@ -19,6 +22,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+import os_check
 from top_bar import TopBarWidget
 from arp_widget import ArpeggiatorWidget
 from synthplayer import SynthPlayer
@@ -238,9 +242,9 @@ class LoopArpeggiatorMainWindow(QMainWindow):
       - A vertical list of InstrumentRowWidgets inside that scroll area
       - A button at the bottom to add more instruments
     """
-    def __init__(self):
+    def __init__(self, soundfont_path):
         # ===================== Functionality ========================
-        self.synth = SynthPlayer("/usr/share/sounds/sf2/FluidR3_GM.sf2")
+        self.synth = SynthPlayer(soundfont_path)
 
         # ==================== Base Window Setup =====================
         super().__init__()
@@ -340,8 +344,21 @@ class LoopArpeggiatorMainWindow(QMainWindow):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Run the Loop Arpeggiator.")
+    if platform.system() == "Windows":
+        default_sf = r"C:\tools\fluidsynth\soundfonts\FluidR3_GM.sf2"
+    else:
+        default_sf = "/usr/share/sounds/sf2/FluidR3_GM.sf2"
+
+    parser.add_argument(
+        "-sf", "--soundfont",
+        help="Path to the SoundFont file to use.",
+        default=default_sf
+    )
+    args = parser.parse_args()
+
     app = QApplication(sys.argv)
-    window = LoopArpeggiatorMainWindow()
+    window = LoopArpeggiatorMainWindow(soundfont_path=args.soundfont)
     window.show()
     sys.exit(app.exec())
 
