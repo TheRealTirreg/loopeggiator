@@ -42,9 +42,10 @@ class Arpeggiator():
         
         # Determine the notes to play
         notes = [self.ground_note]
-        if self.variants_active:
-            for variant in self.variants:
-                notes.append(self.ground_note + variant)
+        for i, v in enumerate(self.variants):
+            if self.variants_active[i]:
+                notes.append(self.ground_note + v)
+
         notes.sort(reverse=self.mode == Mode.DOWN)
         if self.mode == Mode.RANDOM:
             random.shuffle(notes)
@@ -72,6 +73,13 @@ class Arpeggiator():
 
 
 if __name__ == "__main__":
-    arp = Arpeggiator(1, 0.5, 60, Mode.UP, [False, False, False], [7, 5, 0])
+    arp = Arpeggiator(
+        bpm_multiplier=1,
+        note_length=0.5,
+        ground_note=60,
+        mode=Mode.UP,
+        variants_active=[False, False, False],
+        variants=[7, 5, 0]
+    )
     for msg in arp.get_arpeggio(120, 0):
         print(msg)

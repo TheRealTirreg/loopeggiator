@@ -135,6 +135,11 @@ class ArpeggiatorWidget(QWidget):
         # Add row to form layout
         form_layout.addRow("Mode:", self.mode_layout)
 
+        # Connect buttons to the same slot
+        self.btn_up.clicked.connect(self.on_mode_button_clicked)
+        self.btn_down.clicked.connect(self.on_mode_button_clicked)
+        self.btn_random.clicked.connect(self.on_mode_button_clicked)
+
         # ==================== ACTIVATION BUTTONS (Variants Active) ====================
         activation_layout = QHBoxLayout()
 
@@ -142,19 +147,19 @@ class ArpeggiatorWidget(QWidget):
         self.variant1_button.setCheckable(True)
         self.variant1_button.setChecked(default_variants_active[0])  # default on
         self.update_button_color(self.variant1_button, default_variants_active[0])
-        self.variant1_button.toggled.connect(lambda checked: self.update_button_color(self.variant1_button, checked))
+        self.variant1_button.toggled.connect(lambda checked: self.on_variant1_button_toggled(checked))
 
         self.variant2_button = QPushButton("Variant 2")
         self.variant2_button.setCheckable(True)
         self.variant2_button.setChecked(default_variants_active[1])  # default off
         self.update_button_color(self.variant2_button, default_variants_active[1])
-        self.variant2_button.toggled.connect(lambda checked: self.update_button_color(self.variant2_button, checked))
+        self.variant2_button.toggled.connect(lambda checked: self.on_variant2_button_toggled(checked))
 
         self.variant3_button = QPushButton("Variant 3")
         self.variant3_button.setCheckable(True)
         self.variant3_button.setChecked(default_variants_active[2])  # default off
         self.update_button_color(self.variant3_button, default_variants_active[2])
-        self.variant3_button.toggled.connect(lambda checked: self.update_button_color(self.variant3_button, checked))
+        self.variant3_button.toggled.connect(lambda checked: self.on_variant3_button_toggled(checked))
 
         activation_layout.addWidget(self.variant1_button)
         activation_layout.addWidget(self.variant2_button)
@@ -232,6 +237,7 @@ class ArpeggiatorWidget(QWidget):
         self.rate_spin.blockSignals(True)
         self.rate_spin.setValue(chosen_rate)
         self.rate_spin.blockSignals(False)
+        self.arp.rate = chosen_rate
 
     def on_rate_spin_changed(self, spin_value: float):
         chosen_rate = self.closest_in_list(spin_value, self.rate_values)
@@ -242,6 +248,7 @@ class ArpeggiatorWidget(QWidget):
         self.rate_slider.blockSignals(True)
         self.rate_slider.setValue(index)
         self.rate_slider.blockSignals(False)
+        self.arp.rate = chosen_rate
 
     def closest_in_list(self, value, valid_list):
         return min(valid_list, key=lambda x: abs(x - value))
@@ -254,6 +261,7 @@ class ArpeggiatorWidget(QWidget):
         self.note_length_spin.blockSignals(True)
         self.note_length_spin.setValue(length)
         self.note_length_spin.blockSignals(False)
+        self.arp.note_length = length
 
     def on_note_length_spin_changed(self, spin_value: float):
         snapped = round(spin_value, 1)
@@ -267,6 +275,7 @@ class ArpeggiatorWidget(QWidget):
         self.note_length_slider.blockSignals(True)
         self.note_length_slider.setValue(slider_val)
         self.note_length_slider.blockSignals(False)
+        self.arp.note_length = snapped
 
     # ---------------------------------------------------------------------------------------
     # GROUND NOTE
@@ -276,12 +285,14 @@ class ArpeggiatorWidget(QWidget):
         self.ground_note_spin.setValue(slider_value)
         self.ground_note_spin.blockSignals(False)
         self.update_ground_note_label(slider_value)
+        self.arp.ground_note = slider_value
 
     def on_ground_note_spin_changed(self, spin_value: int):
         self.ground_note_slider.blockSignals(True)
         self.ground_note_slider.setValue(spin_value)
         self.ground_note_slider.blockSignals(False)
         self.update_ground_note_label(spin_value)
+        self.arp.ground_note = spin_value
 
     def update_ground_note_label(self, midi_note: int):
         note_name = self.midi_to_note_name(midi_note)
@@ -292,6 +303,46 @@ class ArpeggiatorWidget(QWidget):
         octave = midi_note // 12 - 1
         note = notes[midi_note % 12]
         return f"{note}{octave}"
+    
+    # ---------------------------------------------------------------------------------------
+    # MODE
+    # ---------------------------------------------------------------------------------------
+    
+    def on_mode_button_clicked(self):
+        # Get the sender button
+        sender = self.sender()
+
+        # Set the mode based on the button clicked
+        if sender == self.btn_up:
+            self.arp.mode = Mode.UP
+        elif sender == self.btn_down:
+            self.arp.mode = Mode.DOWN
+        elif sender == self.btn_random:
+            self.arp.mode = Mode.RANDOM
+
+        # Uncheck other buttons in the group
+        for button in self.mode_button_group.buttons():
+            if button != sender:
+                button.setChecked(False)
+
+        # Set the clicked button to checked
+        sender.setChecked(True)
+
+    # ---------------------------------------------------------------------------------------
+    # VARIANT 1, 2, 3 ACTIVATION
+    # ---------------------------------------------------------------------------------------
+
+    def on_variant1_button_toggled(self, checked: bool):
+        self.arp.variants_active[0] = checked
+        self.update_button_color(self.variant1_button, checked)
+
+    def on_variant2_button_toggled(self, checked: bool):
+        self.arp.variants_active[1] = checked
+        self.update_button_color(self.variant2_button, checked)
+
+    def on_variant3_button_toggled(self, checked: bool):
+        self.arp.variants_active[2] = checked
+        self.update_button_color(self.variant3_button, checked)
 
     # ---------------------------------------------------------------------------------------
     # VARIANT 1, 2, 3 OFFSETS
@@ -300,31 +351,37 @@ class ArpeggiatorWidget(QWidget):
         self.variant1_spin.blockSignals(True)
         self.variant1_spin.setValue(slider_value)
         self.variant1_spin.blockSignals(False)
+        self.arp.variants[0] = slider_value
 
     def on_variant1_spin_changed(self, spin_value: int):
         self.variant1_slider.blockSignals(True)
         self.variant1_slider.setValue(spin_value)
         self.variant1_slider.blockSignals(False)
+        self.arp.variants[0] = spin_value
 
     def on_variant2_slider_changed(self, slider_value: int):
         self.variant2_spin.blockSignals(True)
         self.variant2_spin.setValue(slider_value)
         self.variant2_spin.blockSignals(False)
+        self.arp.variants[1] = slider_value
 
     def on_variant2_spin_changed(self, spin_value: int):
         self.variant2_slider.blockSignals(True)
         self.variant2_slider.setValue(spin_value)
         self.variant2_slider.blockSignals(False)
+        self.arp.variants[1] = spin_value
 
     def on_variant3_slider_changed(self, slider_value: int):
         self.variant3_spin.blockSignals(True)
         self.variant3_spin.setValue(slider_value)
         self.variant3_spin.blockSignals(False)
+        self.arp.variants[2] = slider_value
 
     def on_variant3_spin_changed(self, spin_value: int):
         self.variant3_slider.blockSignals(True)
         self.variant3_slider.setValue(spin_value)
         self.variant3_slider.blockSignals(False)
+        self.arp.variants[2] = spin_value
 
 def main():
     app = QApplication(sys.argv)

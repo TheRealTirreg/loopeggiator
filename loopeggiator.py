@@ -226,6 +226,9 @@ class InstrumentRowWidget(QWidget):
         arp_id = self.arp_queue[self.arp_queue_idx]
         arpeggio, time = self.arp_blocks[arp_id].get_arpeggio(bpm, self.instrument)
 
+        # Debug prints
+        print(f"Row {self.id} plays Arpeggio ID {arp_id} for time {time}. The q-idx: {self.arp_queue_idx}/{self.arp_queue}", flush=True)
+
         # Increment the arp_queue_idx, and wrap around if necessary
         self.arp_queue_idx += 1
         if self.arp_queue_idx >= len(self.arp_queue):
