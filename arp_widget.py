@@ -1,6 +1,7 @@
 import sys
 import numpy as np
-import sounddevice as sd
+import mido
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -12,13 +13,110 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QSpinBox,
     QPushButton,
-    QButtonGroup
+    QButtonGroup,
+    QSizePolicy,
+    QFrame,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from arp import Arpeggiator, Mode
 
 
+class ArpeggiatorBlockWidget(QWidget):
+    """
+    A small widget containing:
+      - SpinBox for loop count
+      - One ArpeggiatorWidget
+      - Surrounded by a tight QFrame
+    """
+    play_time_changed = Signal()
+
+    def __init__(self, parent=None, repetitions=1, id=0):
+        self.id = id
+        self.iteration = 0  # Current iteration of the arpeggiator, up to repetitions - 1
+
+        # ========================= Layout Setup =========================
+        super().__init__(parent)
+
+        # Let this widget shrink to fit content (rather than fill spare space).
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
+
+        # Outer layout for this entire block
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Frame so we get a box around each arpeggiator
+        frame = QFrame()
+        frame.setFrameShape(QFrame.Shape.StyledPanel)
+        frame.setFrameShadow(QFrame.Shadow.Raised)
+        # Also prefer minimal sizing
+        frame.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
+
+        # Put content into the frame's layout
+        frame_layout = QVBoxLayout(frame)
+        frame_layout.setContentsMargins(5, 5, 5, 5)
+
+        # Top row: loop count
+        loop_layout = QHBoxLayout()
+        loop_label = QLabel("Loop count:")
+        self.loop_spin = QSpinBox()
+        self.loop_spin.setRange(1, 16)
+        self.loop_spin.setValue(repetitions)
+        loop_layout.addWidget(loop_label)
+        loop_layout.addWidget(self.loop_spin)
+        loop_layout.addStretch()
+
+        # The ArpeggiatorWidget with an optional fixed or min size
+        self.arp_widget = ArpeggiatorWidget()
+        # If you want a strict fixed size, uncomment:
+        # self.arp_widget.setFixedSize(QSize(300, 220))
+        # Or if you want it to be just enough for the controls:
+        self.arp_widget.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
+
+        # Add subwidgets to frame layout
+        frame_layout.addLayout(loop_layout)
+        frame_layout.addWidget(self.arp_widget)
+
+        # Finally, put the frame in the outer layout
+        outer_layout.addWidget(frame)
+
+        # Connect signals
+        self.loop_spin.valueChanged.connect(self._on_repetitions_changed)
+        self.arp_widget.play_time_changed.connect(self._on_arp_widget_changed)
+
+    def _on_repetitions_changed(self):
+        """Update the loop count"""
+        self.play_time_changed.emit()  # Emit signal to update total play time
+
+    def _on_arp_widget_changed(self):
+        """Give signal from arp widget through to parent"""
+        self.play_time_changed.emit()
+
+    @property
+    def repetitions(self):
+        """Get the total loop count"""
+        return self.loop_spin.value()
+    
+    @repetitions.setter
+    def repetitions(self, value):
+        """Set the total loop count"""
+        self.loop_spin.setValue(value)
+        self.repetitions = value
+
+    def get_arpeggio(self, bpm, instrument) -> tuple[list[mido.Message], int]:
+        """Get mido note list for this arpeggiator"""
+        arp, total_time = self.arp_widget.arp.get_arpeggio(bpm, instrument)
+        return arp, total_time
+    
+    def get_play_time(self, bpm) -> float:
+        """Get the play time for this arpeggiator block (with repetitions)"""
+        # e.g.: If rate=2 => half the time
+        total_time = (1 / self.arp_widget.arp.rate) * (60 / bpm) * self.repetitions
+        return total_time
+
+
 class ArpeggiatorWidget(QWidget):
+    play_time_changed = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -238,6 +336,7 @@ class ArpeggiatorWidget(QWidget):
         self.rate_spin.setValue(chosen_rate)
         self.rate_spin.blockSignals(False)
         self.arp.rate = chosen_rate
+        self.play_time_changed.emit()  # Emit signal to update play time
 
     def on_rate_spin_changed(self, spin_value: float):
         chosen_rate = self.closest_in_list(spin_value, self.rate_values)
@@ -249,6 +348,7 @@ class ArpeggiatorWidget(QWidget):
         self.rate_slider.setValue(index)
         self.rate_slider.blockSignals(False)
         self.arp.rate = chosen_rate
+        self.play_time_changed.emit()  # Emit signal to update play time
 
     def closest_in_list(self, value, valid_list):
         return min(valid_list, key=lambda x: abs(x - value))

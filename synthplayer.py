@@ -1,3 +1,4 @@
+import os_check  # Ensures this script also works on Windows
 import time
 import fluidsynth
 from concurrent.futures import ThreadPoolExecutor
@@ -11,6 +12,7 @@ class SynthPlayer:
         self.fs.program_select(0, self.sfid, 0, 0)  # Banque 0, preset 0 par défaut
         self.threadpool = ThreadPoolExecutor(max_workers=4)
         self.num_channels = 0
+        self.active_channels = []  # List of ints (>1, 1, 0). 0 = no arpeggio queued, 1 = last arpeggio playing, >1 = enough arpeggios queued
     
     def add_channel(self, bank=0, preset=0):
         """
@@ -47,22 +49,26 @@ class SynthPlayer:
         midi_messages: list of tracks, each track is a list of mido.Message
         e.g. 
         midi_messages = [
-            [Message('program_change', program=0, time=0), Message('note_on', note=60, velocity=64, time=0), ...],
-            [Message('program_change', program=40, time=0), Message('note_on', note=64, velocity=64, time=0), ...]
+            [Message('program_change', program=0, time=0), Message('note_on', note=60, velocity=64, time=0), ...],  # Track 1
+            [Message('program_change', program=40, time=0), Message('note_on', note=60, velocity=64, time=0), ...]  # Track 2
+            ...
         ]
         """
-        # 1) Collect all events into a single list of (absolute_time, channel, msg).
-        #    We'll assume each track is assigned a unique channel index.
-        #    If your code has some other channel logic, adjust accordingly.
+        # Initialize:
+        # Collect all events into a single list of (absolute_time, channel, msg).
+        # Each track is assigned a unique channel index.
         all_events = []
         for channel, track in enumerate(midi_messages):
-            current_time = 0.0
+            self.active_channels.append(1)  # Initialize active channels
             for msg in track:
-                current_time += msg.time  # delta time from previous
-                all_events.append((current_time, channel, msg))
+                all_events.append((msg.time, channel, msg))
 
         # 2) Sort by absolute_time
         all_events.sort(key=lambda x: x[0])
+
+        print(f"Playing {len(all_events)} events in total:")
+        for event_time, channel, msg in all_events:
+            print(f"Time: {event_time:.2f}, Channel: {channel}, Message: {msg}", flush=True)
 
         # 3) Step through all events in chronological order
         start_wall_time = time.time()
@@ -95,9 +101,27 @@ class SynthPlayer:
 
 
 if __name__ == "__main__":
-    synth = SynthPlayer("/usr/share/sounds/sf2/FluidR3_GM.sf2")
-    synth.add_channel()
-    synth.play_note(60, 1, channel=0)
-    time.sleep(1)
-    synth.close()
+    import mido
+    
+    midi_messages = [
+        [
+            mido.Message('program_change', program=0, time=0),  # Piano
+            mido.Message('note_on', note=60, velocity=64, time=0),  # Middle C
+            mido.Message('note_off', note=60, velocity=64, time=1.5),  # Release Middle C after 1.5 seconds
+            mido.Message('note_on', note=62, velocity=64, time=3),  # D
+            mido.Message('note_off', note=62, velocity=64, time=4.5),  # Release D after 1.5 seconds
+        ],
+        [
+            mido.Message('program_change', program=40, time=0),  # Violin
+            mido.Message('note_on', note=64, velocity=64, time=0),  # E
+            mido.Message('note_off', note=64, velocity=64, time=1.5),  # Release E after 1.5 seconds
+            mido.Message('note_on', note=62, velocity=64, time=1.5),  # E
+            mido.Message('note_off', note=62, velocity=64, time=3),  # Release E after 1.5 seconds
+        ]
+    ]
+    path = r"C:\tools\fluidsynth\soundfonts\FluidR3_GM.sf2"
+    # path = '/usr/share/sounds/sf2/FluidR3_GM.sf2'
+    print(f"using path {path}")
+    player = SynthPlayer(path)
+    player.play_midi(midi_messages)
 

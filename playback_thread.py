@@ -51,11 +51,22 @@ class PlaybackThread(QThread):
                 if row.mute_checkbox.isChecked():
                     continue
 
+                # If the user just added a new row, we need to increase the size of our lists
+                if len(self.start_times) < len(self.instrument_rows):
+                    self.start_times.append(current_time)
+                    self.next_arpeggios.append(None)
+
                 # If we have no queued arpeggio, skip.
-                # This should never be the case, as we just loop through each arp in the row.
                 if self.next_arpeggios[i] is None:
-                    print(f"Row {i} has no arpeggio queued.", flush=True)
+                    print(f"Row {i} has no arpeggio queued.", flush=True)  
                     continue
+
+                # Fetch next arpeggio [i] if synth.active_channels[i] > 1
+                # # If we still have arpeggios queued, skip. Else, fetch the next one.
+                # if self.synth.active_channels[i] > 1:
+                #     continue
+                # new_arpeggio, new_arp_time = row.get_next_arpeggio(bpm)
+                # self.next_arpeggios[i] = (new_arpeggio, new_arp_time)
 
                 # If it's time to start row[i]'s next arpeggio:
                 if now >= self.start_times[i]:
@@ -64,7 +75,7 @@ class PlaybackThread(QThread):
                     arpeggio, arp_time = self.next_arpeggios[i]
 
                     # 2) Actually play it (non‐blocking or schedule, depending on your SynthPlayer)
-                    self.synth.play_midi([arpeggio])  
+                    self.synth.play_midi([arpeggio])  # TODO this should not be one arpeggio, but a combined list of all next_arpeggios. Play_midi needs to give a signal when it is done with the [i]-th arpeggio.
                     # or some scheduling approach that sets note on/off at the right times
 
                     # 3) Update row’s next start time

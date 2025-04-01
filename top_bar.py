@@ -1,9 +1,11 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSpinBox, QStyle
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSpinBox, QStyle, QLabel
+from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QShortcut, QKeySequence
 
 
 class TopBarWidget(QWidget):
+    bpm_changed = Signal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -28,6 +30,11 @@ class TopBarWidget(QWidget):
         self.rate_spin.setRange(20, 300)
         self.rate_spin.setValue(100)
         self.rate_spin.setToolTip("BPM")
+        self.rate_spin.valueChanged.connect(self._on_bpm_changed)  # Connect to signal
+
+        # --- Loop length info box ---
+        self.loop_length_label = QLabel("Loop Length: 0.60s")
+        self.loop_length_label.setToolTip("The loop length is determined by the longest arpeggio chain")
 
         # --- Save & Load buttons (icon‐only) ---
         self.save_button = QPushButton()
@@ -41,6 +48,7 @@ class TopBarWidget(QWidget):
         # Add them to layout
         layout.addWidget(self.play_button)
         layout.addWidget(self.rate_spin)
+        layout.addWidget(self.loop_length_label)
         layout.addStretch(1)
         layout.addWidget(self.save_button)
         layout.addWidget(self.load_button)
@@ -49,6 +57,13 @@ class TopBarWidget(QWidget):
     def bpm(self):
         """Return the current BPM value."""
         return self.rate_spin.value()
+    
+    def _on_bpm_changed(self, value: int):
+        self.bpm_changed.emit(value)
+    
+    def set_loop_length(self, length_s: float):
+        """Set the loop length label text to the given value."""
+        self.loop_length_label.setText(f"Loop Length: {length_s:.2f}s")
 
     def on_play_toggled(self, checked: bool):
         """Switch between the play and stop icon depending on toggle state."""
