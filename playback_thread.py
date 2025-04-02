@@ -7,7 +7,6 @@ class PlaybackThread(QThread):
     Continuously triggers each row's next arpeggio 
     aligned to a measure boundary defined by the BPM.
     """
-    # TODO maybe try Signals? e.g. playbackProgress = Signal(int)
 
     def __init__(self, instrument_rows, get_bpm_func, synth, parent=None):
         super().__init__(parent)
@@ -18,9 +17,12 @@ class PlaybackThread(QThread):
 
         # For each row, store:
         #   - next start time (absolute time)
-        #   - the “next arpeggio” data
+        #   - the "next arpeggio" data
         self.start_times = []
         self.next_arpeggios = []
+        
+        # Track the last set instrument for each channel
+        self.current_instruments = {}
 
     def run(self):
         self.running = True
@@ -39,13 +41,32 @@ class PlaybackThread(QThread):
             else:
                 arpeggio, arp_time = row.get_next_arpeggio(bpm)
                 self.next_arpeggios.append((arpeggio, arp_time))
+            
+            # Initialize the instrument tracking for each row
+            self.current_instruments[row.id] = row.instrument_combo.currentData()
 
         # 2) Main loop
         while self.running:
             now = time.time()
             any_waiting = False
+            
+            # Collect all arpeggios that are ready to play
+            arpeggios_to_play = []
+            
+            # Check for instrument changes
+            for i, row in enumerate(self.instrument_rows):
+                # Get the current instrument for this row
+                current_instrument = row.instrument_combo.currentData()
+                
+                # If the instrument has changed, update it
+                if row.id in self.current_instruments and self.current_instruments[row.id] != current_instrument:
+                    print(f"Instrument change detected for row {row.id}: {self.current_instruments[row.id]} -> {current_instrument}", flush=True)
+                    # Update our tracking
+                    self.current_instruments[row.id] = current_instrument
+                    # Make sure the synth knows about this change
+                    self.synth.change_instrument(row.id, current_instrument)
 
-            # Go through each row to see if it’s time to start the next arpeggio
+            # Go through each row to see if it's time to start the next arpeggio
             for i, row in enumerate(self.instrument_rows):
                 # If the row is muted, skip it
                 if row.mute_checkbox.isChecked():
@@ -55,31 +76,38 @@ class PlaybackThread(QThread):
                 if len(self.start_times) < len(self.instrument_rows):
                     self.start_times.append(current_time)
                     self.next_arpeggios.append(None)
+                    # Initialize the instrument for the new row
+                    self.current_instruments[row.id] = row.instrument_combo.currentData()
+                    # Set the instrument in the synth
+                    self.synth.change_instrument(row.id, row.instrument_combo.currentData())
 
                 # If we have no queued arpeggio, skip.
                 if self.next_arpeggios[i] is None:
                     print(f"Row {i} has no arpeggio queued.", flush=True)  
                     continue
 
-                # Fetch next arpeggio [i] if synth.active_channels[i] > 1
-                # # If we still have arpeggios queued, skip. Else, fetch the next one.
-                # if self.synth.active_channels[i] > 1:
-                #     continue
-                # new_arpeggio, new_arp_time = row.get_next_arpeggio(bpm)
-                # self.next_arpeggios[i] = (new_arpeggio, new_arp_time)
-
                 # If it's time to start row[i]'s next arpeggio:
                 if now >= self.start_times[i]:
                     print("Starting arpeggio for row", i, flush=True)
                     # 1) Retrieve the next arpeggio (already stored)
                     arpeggio, arp_time = self.next_arpeggios[i]
+                    
+                    # Add to the list of arpeggios to play
+                    # Make sure each arpeggio has its channel set correctly
+                    # Get the volume level from the slider
+                    volume = row.volume_slider.value() / 100.0  # Convert to 0.0-1.0 range
+                    
+                    # Process each message in the arpeggio to set the correct channel and adjust velocity
+                    for msg in arpeggio:
+                        if hasattr(msg, 'channel'):
+                            msg.channel = row.id
+                        # If it's a note_on message, adjust the velocity based on the volume slider
+                        if hasattr(msg, 'type') and msg.type == 'note_on' and hasattr(msg, 'velocity'):
+                            msg.velocity = int(msg.velocity * volume)
+                    
+                    arpeggios_to_play.append(arpeggio)
 
-                    # 2) Actually play it (non‐blocking or schedule, depending on your SynthPlayer)
-                    self.synth.play_midi([arpeggio])  # TODO this should not be one arpeggio, but a combined list of all next_arpeggios. Play_midi needs to give a signal when it is done with the [i]-th arpeggio.
-                    # or some scheduling approach that sets note on/off at the right times
-
-                    # 3) Update row’s next start time
-                    #    If you want each row to keep playing back‐to‐back:
+                    # 3) Update row's next start time
                     self.start_times[i] += arp_time
 
                     # 4) Fetch the *following* arpeggio (the next in the queue)
@@ -89,8 +117,12 @@ class PlaybackThread(QThread):
                 else:
                     # Not time yet; we have at least one row waiting
                     any_waiting = True
+            
+            # Play all ready arpeggios at once
+            if arpeggios_to_play:
+                self.synth.play_midi(arpeggios_to_play)
 
-            # Sleep a little so we don’t spin the CPU at 100%
+            # Sleep a little so we don't spin the CPU at 100%
             # Adjust the sleep time for your needs (e.g. 5 ms)
             if any_waiting:
                 time.sleep(0.005)

@@ -103,9 +103,38 @@ class ArpeggiatorBlockWidget(QWidget):
         self.repetitions = value
 
     def get_arpeggio(self, bpm, instrument) -> tuple[list[mido.Message], int]:
-        """Get mido note list for this arpeggiator"""
-        arp, total_time = self.arp_widget.arp.get_arpeggio(bpm, instrument)
-        return arp, total_time
+        """Get mido note list for this arpeggiator with repetitions"""
+        # Get the base arpeggio
+        base_arpeggio, base_time = self.arp_widget.arp.get_arpeggio(bpm, instrument)
+        
+        # If only one repetition, return the base arpeggio as is
+        if self.repetitions == 1:
+            return base_arpeggio, base_time
+        
+        # For multiple repetitions, create a new list with adjusted times
+        all_notes = []
+        
+        # Only copy the program_change message once
+        program_changes = [msg for msg in base_arpeggio if msg.type == 'program_change']
+        for msg in program_changes:
+            all_notes.append(msg)
+        
+        # Get all note messages (note_on and note_off)
+        note_messages = [msg for msg in base_arpeggio if msg.type in ('note_on', 'note_off')]
+        
+        # Repeat the note messages with adjusted times
+        for i in range(self.repetitions):
+            for msg in note_messages:
+                # Create a copy to avoid modifying the original
+                new_msg = msg.copy()
+                # Adjust time: add the offset for this repetition
+                new_msg.time = msg.time + (i * base_time)
+                all_notes.append(new_msg)
+        
+        # Total time is the base time multiplied by the number of repetitions
+        total_time = base_time * self.repetitions
+        
+        return all_notes, total_time
     
     def get_play_time(self, bpm) -> float:
         """Get the play time for this arpeggiator block (with repetitions)"""
