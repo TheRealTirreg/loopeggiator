@@ -1,4 +1,5 @@
 import time
+import mido
 from PySide6.QtCore import QThread, Signal
 
 
@@ -9,16 +10,17 @@ class PlaybackThread(QThread):
     def __init__(self, instrument_rows, get_bpm_func, synth, parent=None):
         super().__init__(parent)
         self.instrument_rows = instrument_rows  # list[InstrumentRowWidget]
-        self.get_bpm_func = get_bpm_func        # function that returns current BPM
+        self.get_bpm_func = get_bpm_func  # function that returns current BPM
         self.synth = synth
         self.running = False
 
     def run(self):
         self.running = True
-        bpm = self.get_bpm_func()
 
         while self.running:
-            # 1) Build one MIDI track [mido.Messages] for each row
+            bpm = self.get_bpm_func()
+
+            # Build one MIDI track [mido.Messages] for each row
             midi_tracks = []
             for row_index, row in enumerate(self.instrument_rows):
                 if row.mute_checkbox.isChecked():
@@ -30,13 +32,13 @@ class PlaybackThread(QThread):
                     #       Message('note_on', note=..., velocity=..., time=0),
                     #       Message('note_off', note=..., velocity=..., time=1.0),
                     #       ... ]
-                    track, play_time = row.get_next_arpeggio(bpm)
+                    track, play_time = row.get_all_arpeggios(bpm)
+
                     midi_tracks.append(track)
 
             # Play MIDI
             if self.running:
                 self.synth.play_midi(midi_tracks)
-                print(f"Played {len(midi_tracks)} tracks")
 
         self.running = False
         self.finished.emit()

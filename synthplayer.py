@@ -1,7 +1,6 @@
 import os_check  # Ensures this script also works on Windows
 import time
 import fluidsynth
-from concurrent.futures import ThreadPoolExecutor
 
 
 class SynthPlayer:
@@ -13,6 +12,10 @@ class SynthPlayer:
         for ch in range(self.max_rows):
             self.fs.program_select(ch, self.sfid, 0, 0)
 
+    def change_instrument(self, channel, instrument, bank=0):
+        print(f"Change instrument on channel {channel} to {instrument}")
+        self.fs.program_select(channel, self.sfid, bank, instrument)
+
     def play_note(self, note, duration=1, velocity=100, channel=0):
         self.fs.noteon(channel, note, velocity)
         time.sleep(duration)
@@ -22,10 +25,9 @@ class SynthPlayer:
         """
         `tracks` is a list of MIDO tracks, one track per instrument row.
         Each track is a list of mido.Message objects.
-        We treat `msg.time` as a delta-time (seconds since the last event).
+        `msg.time` is as a delta-time (seconds since the last event)!
         The track index => channel #.
         """
-
         all_events = []
         for channel, track in enumerate(tracks):
             abs_time = 0.0
@@ -53,6 +55,8 @@ class SynthPlayer:
                 self.fs.noteon(channel, msg.note, velocity)
             elif msg.type == 'note_off':
                 self.fs.noteoff(channel, msg.note)
+            elif msg.type == 'text' and msg.text == 'wait_end_of_track':
+                pass  # Wait until the end of one loop
             else:
                 print(f"Unknown message type: {msg.type}")
 
@@ -66,9 +70,7 @@ class SynthPlayer:
                 self.fs.noteoff(ch, note)
 
     def close(self):
-        """
-        Properly clean up fluidsynth resources.
-        """
+        """Properly clean up fluidsynth resources"""
         self.fs.delete()
 
 

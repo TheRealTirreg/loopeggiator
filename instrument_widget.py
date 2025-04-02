@@ -153,6 +153,16 @@ class InstrumentRowWidget(QWidget):
 
         return arpeggio, time
     
+    def get_all_arpeggios(self, bpm):
+        all_arpeggios = []
+        total_time = 0
+        for block in self.arp_blocks:
+            arpeggio, time = block.get_arpeggio(bpm, self.instrument)
+            all_arpeggios.extend(arpeggio)
+            total_time += time
+        
+        return all_arpeggios, total_time
+    
     def get_play_time(self, bpm):
         """Adds the play_time of all arpeggiators in this row."""
         play_time = 0
