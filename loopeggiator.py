@@ -30,7 +30,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
     """
     def __init__(self, soundfont_path):
         # ===================== Functionality ========================
-        self.synth = SynthPlayer(soundfont_path)
+        self.synth = SynthPlayer(soundfont_path, max_rows=16)
 
         # ==================== Base Window Setup =====================
         super().__init__()

@@ -58,7 +58,7 @@ class InstrumentRowWidget(QWidget):
         volume_layout.addWidget(self.volume_slider)
 
         # Play Do Button
-        self.btn_do = QPushButton("Do")
+        self.btn_do = QPushButton("Play a Do (C4)")
         self.btn_do.clicked.connect(lambda: self.synth.play_note(60, 1, channel=self.id))
 
         # Instrument combo
@@ -101,7 +101,6 @@ class InstrumentRowWidget(QWidget):
         self.synth = synth
         self.id = instrument_row_id
         self.instrument = 0  # Default Piano
-        self.synth.add_channel()
 
         self.arp_blocks = []  # List of ArpeggiatorBlockWidget(s) in this row
         self.arp_queue = []  # Queue of arpeggios to play. E.g. if ArpWidget1 has 2 repetitions, add this to the queue 2 times
@@ -136,8 +135,8 @@ class InstrumentRowWidget(QWidget):
         self.play_time_changed.emit()
     
     def change_instrument(self, index):
-        instrument = self.instrument_combo.itemData(index)
-        self.synth.change_instrument(self.id, instrument)  # bank=0
+        self.instrument = self.instrument_combo.itemData(index)
+        self.synth.change_instrument(self.id, self.instrument)  # bank=0
 
     def get_next_arpeggio(self, bpm):
         """
