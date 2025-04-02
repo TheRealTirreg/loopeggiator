@@ -28,7 +28,7 @@ class TopBarWidget(QWidget):
         # --- BPM spinbox ---
         self.rate_spin = QSpinBox()
         self.rate_spin.setRange(20, 300)
-        self.rate_spin.setValue(100)
+        self.rate_spin.setValue(60)
         self.rate_spin.setToolTip("BPM")
         self.rate_spin.valueChanged.connect(self._on_bpm_changed)  # Connect to signal
 
