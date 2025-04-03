@@ -61,7 +61,7 @@ class Arpeggiator():
         # e.g. if rate=2, the arpeggio plays twice as fast as the song
         #      if note_length=0.5, the arpeggio plays each note half as long
         #      if note_length=1 (max value), the arpeggio plays legato
-        note_duration = (60*4 / bpm) * (self.note_length / self.rate)
+        note_duration = (60*4 / bpm) * (self.note_length / self.rate) / len(notes)
 
         # Not to be confused with note_duration
         # time_step is the time between each note in the arpeggio
