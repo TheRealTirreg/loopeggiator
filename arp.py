@@ -79,16 +79,6 @@ class Arpeggiator():
                 track.append(mido.Message('note_off', note=note, velocity=self.velocity, time=0))
             track.append(mido.Message('note_off', note=note, velocity=self.velocity, time=note_duration))
 
-            # add gap to account for note_length (pause between notes)
-            if i < len(notes) - 1:
-                gap = time_step - note_duration
-                if gap < 0:
-                    gap = 0  # If note_length is bigger than the step, no gap
-
-                # Insert a dummy MetaMessage to carry the gap
-                # so the next note_on in the next iteration starts after 'gap' seconds
-                track.append(mido.Message('note_off', note=0, velocity=0, time=gap))
-
             # Calculate the total time for the arpeggio
             total_time += time_step
         
