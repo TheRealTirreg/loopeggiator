@@ -25,6 +25,11 @@ class TopBarWidget(QWidget):
         play_shortcut = QShortcut(QKeySequence(Qt.Key_Space), self)
         play_shortcut.activated.connect(self.play_button.toggle)
 
+        # --- BPM label ---
+        self.bpm_label = QLabel("BPM (Quarter Notes):")
+        self.bpm_label.setToolTip("BPM is expressed in quarter notes")
+        # self.bpm_label.setPixmap(QIcon("path/to/quarter_note_icon.png").pixmap(16, 16))  # no icon yet, I am scared of copyright issues
+
         # --- BPM spinbox ---
         self.rate_spin = QSpinBox()
         self.rate_spin.setRange(20, 300)
@@ -47,9 +52,15 @@ class TopBarWidget(QWidget):
 
         # Add them to layout
         layout.addWidget(self.play_button)
+        layout.addSpacing(16)
+
+        layout.addWidget(self.bpm_label)
         layout.addWidget(self.rate_spin)
+        layout.addSpacing(16)
+
         layout.addWidget(self.loop_length_label)
         layout.addStretch(1)
+
         layout.addWidget(self.save_button)
         layout.addWidget(self.load_button)
 
