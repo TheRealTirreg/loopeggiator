@@ -118,10 +118,6 @@ class ArpeggiatorBlockWidget(QWidget):
         """Give signal from arp widget through to parent"""
         self.play_time_changed.emit()
 
-    
-
-        
-
     @property
     def repetitions(self):
         """Get the total loop count"""
@@ -152,8 +148,9 @@ class ArpeggiatorBlockWidget(QWidget):
         return total_time
 
     def remove_block(self):
-        if self.parent():
-            self.parent().remove_arp_block(self)
+        if self.parent:
+            self.parent.remove_arp_block(self)
+
 
 class ArpeggiatorWidget(QWidget):
     play_time_changed = Signal()
@@ -182,7 +179,6 @@ class ArpeggiatorWidget(QWidget):
             default_variants
         )
         
-
         # Layout
         main_layout = QVBoxLayout()
         form_layout = QFormLayout()
@@ -406,8 +402,6 @@ class ArpeggiatorWidget(QWidget):
 
     def closest_in_list(self, value, valid_list):
         return min(valid_list, key=lambda x: abs(x - value))
-
-
     
     # ---------------------------------------------------------------------------------------
     # Mute changed
@@ -417,8 +411,6 @@ class ArpeggiatorWidget(QWidget):
         self.arp.mute = state
         self.mute_checkbox.blockSignals(False)
         
-        
-
     def change_arp_volume(self):
         self.arp.velocity = self.parent.velocity
 
@@ -476,7 +468,6 @@ class ArpeggiatorWidget(QWidget):
     # ---------------------------------------------------------------------------------------
     # MODE
     # ---------------------------------------------------------------------------------------
-    
     def on_mode_button_clicked(self):
         # Get the sender button
         sender = self.sender()
