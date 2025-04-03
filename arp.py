@@ -21,7 +21,7 @@ class Arpeggiator():
     - Have variants:
         - Variants are notes defined by offsets in relation to the ground note
     """
-    def __init__(self, bpm_multiplier: float, note_length: float, ground_note: int, mode: Mode, variants_active, variants):
+    def __init__(self, bpm_multiplier: float, note_length: float, ground_note: int, mode: Mode, mute: bool, variants_active, variants):
         # rate: If rate 1, the arpeggio plays at the same speed as the song
         self.rate = bpm_multiplier
         # Determines if the arpeggio is more staccato or legato
@@ -30,10 +30,13 @@ class Arpeggiator():
         self.ground_note = ground_note
         # Mode of the arpeggio (up, down, random)
         self.mode = mode
+        #self.velocity = volume
         # e.g. [True, False, False] for one out of three variants active
         self.variants_active = variants_active
         # e.g. [7, 5, 0] Describes the offset in relation to the gound note. Only relevant if variants_active is True
         self.variants = variants
+        # about the mute
+        self.mute = mute
 
     def get_arpeggio(self, bpm, instrument) -> Tuple[list[mido.Message], int]:
         track = [
@@ -58,7 +61,7 @@ class Arpeggiator():
         # e.g. if rate=2, the arpeggio plays twice as fast as the song
         #      if note_length=0.5, the arpeggio plays each note half as long
         #      if note_length=1 (max value), the arpeggio plays legato
-        note_duration = (60 / bpm) * (self.note_length / self.rate)
+        note_duration = (60*4 / bpm) * (self.note_length / self.rate)
 
         # Not to be confused with note_duration
         # time_step is the time between each note in the arpeggio
@@ -70,7 +73,10 @@ class Arpeggiator():
         # We want each note_on -> note_off after note_duration,
         # and then we wait (time_step - note_duration) before the next note_on
         for i, note in enumerate(notes):
-            track.append(mido.Message('note_on', note=note, velocity=64, time=0))
+            if not self.mute:
+                track.append(mido.Message('note_on', note=note, velocity=64, time=0))
+            else:
+                track.append(mido.Message('note_off', note=note, velocity=64, time=0))
             track.append(mido.Message('note_off', note=note, velocity=64, time=note_duration))
 
             # add gap to account for note_length (pause between notes)
@@ -81,7 +87,7 @@ class Arpeggiator():
 
                 # Insert a dummy MetaMessage to carry the gap
                 # so the next note_on in the next iteration starts after 'gap' seconds
-                track.append(mido.MetaMessage('gap', text='wait', time=gap))
+                track.append(mido.Message('note_off', note=0, velocity=0, time=gap))
 
             # Calculate the total time for the arpeggio
             total_time += time_step

@@ -15,6 +15,9 @@ from PySide6.QtWidgets import (
     QPushButton,
     QButtonGroup,
     QSizePolicy,
+    QCheckBox,
+    QSpacerItem,
+    QStyle,
     QFrame,
 )
 from PySide6.QtCore import Qt, Signal
@@ -29,10 +32,13 @@ class ArpeggiatorBlockWidget(QWidget):
       - Surrounded by a tight QFrame
     """
     play_time_changed = Signal()
-
+    mute_change = Signal()
     def __init__(self, parent=None, repetitions=1, id=0):
         self.id = id
         self.iteration = 0  # Current iteration of the arpeggiator, up to repetitions - 1
+        #self.velocity = 20
+        if parent:
+            self.velocity = parent.volume_slider.value()
 
         # ========================= Layout Setup =========================
         super().__init__(parent)
@@ -61,9 +67,29 @@ class ArpeggiatorBlockWidget(QWidget):
         self.loop_spin = QSpinBox()
         self.loop_spin.setRange(1, 16)
         self.loop_spin.setValue(repetitions)
+
+
+
+        # delete button
+        spacer = QSpacerItem(100, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.delete_button = QPushButton()  # Remplace par ton icône si nécessaire
+        self.delete_button.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
+        self.delete_button.setIconSize(QSize(16, 16))
+        self.delete_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.delete_button.clicked.connect(self.remove_block)
+
+        # Add widgets side by side
         loop_layout.addWidget(loop_label)
-        loop_layout.addWidget(self.loop_spin)
-        loop_layout.addStretch()
+        loop_layout.addWidget(self.loop_spin) 
+        loop_layout.addItem(spacer)
+        loop_layout.addWidget(self.delete_button)
+    
+        
+
+      
+
+        
+        
 
         # The ArpeggiatorWidget with an optional fixed or min size
         self.arp_widget = ArpeggiatorWidget()
@@ -90,6 +116,10 @@ class ArpeggiatorBlockWidget(QWidget):
     def _on_arp_widget_changed(self):
         """Give signal from arp widget through to parent"""
         self.play_time_changed.emit()
+
+    
+
+        
 
     @property
     def repetitions(self):
@@ -120,6 +150,9 @@ class ArpeggiatorBlockWidget(QWidget):
         total_time = (1 / self.arp_widget.arp.rate) * (60 / bpm) * self.repetitions
         return total_time
 
+    def remove_block(self):
+        if self.parent():
+            self.parent().remove_arp_block(self)
 
 class ArpeggiatorWidget(QWidget):
     play_time_changed = Signal()
@@ -132,6 +165,8 @@ class ArpeggiatorWidget(QWidget):
         default_note_len = 0.2
         default_ground_note = 60  # Midi C4
         default_mode = Mode.UP
+        default_mute = False
+        #default_volume = parent.velocity
         default_variants_active = [False, False, False]
         default_variants = [0, 0, 0]
         self.arp = Arpeggiator(
@@ -139,14 +174,22 @@ class ArpeggiatorWidget(QWidget):
             default_note_len,
             default_ground_note,
             default_mode,
+            default_mute,
+            #default_volume,
             default_variants_active,
             default_variants
         )
+        
 
         # Layout
         main_layout = QVBoxLayout()
         form_layout = QFormLayout()
 
+        ## Mute box
+        self.mute_checkbox = QCheckBox("Mute")
+        self.mute_checkbox.setChecked(False)
+        self.mute_checkbox.stateChanged.connect(self.on_mute_changed)
+        form_layout.addRow(self.mute_checkbox)
         # ==================== 1) Rate (x BPM) [Discrete: 0.5, 1, 2, 4, 8, 16, 32, 64] ====================
         self.rate_values = [0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]
 
@@ -168,6 +211,7 @@ class ArpeggiatorWidget(QWidget):
         self.rate_slider.valueChanged.connect(self.on_rate_slider_changed)
         self.rate_spin.valueChanged.connect(self.on_rate_spin_changed)
 
+       
         # ==================== 2) Note Length [0..1, step=0.1] ====================
         self.note_length_slider = QSlider(Qt.Orientation.Horizontal)
         self.note_length_slider.setRange(0, 10)  # each step => 0.1
@@ -359,6 +403,19 @@ class ArpeggiatorWidget(QWidget):
 
     def closest_in_list(self, value, valid_list):
         return min(valid_list, key=lambda x: abs(x - value))
+
+
+    
+    # ---------------------------------------------------------------------------------------
+    # Mute changed
+    # ---------------------------------------------------------------------------------------
+    def on_mute_changed(self, state: bool):
+        self.mute_checkbox.blockSignals(True)
+        self.arp.mute = state
+        self.mute_checkbox.blockSignals(False)
+        
+        
+
 
     # ---------------------------------------------------------------------------------------
     # NOTE LENGTH

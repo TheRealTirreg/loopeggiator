@@ -66,6 +66,9 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         self.btn_add_instrument = QPushButton("Add Instrument")
         self.btn_add_instrument.clicked.connect(self.add_instrument)
 
+
+        
+
         # Add the first instrument row by default
         self.add_instrument()
 
@@ -129,6 +132,9 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         index_for_button = self.vlayout.count() - 1
         self.vlayout.insertWidget(index_for_button, row)
         row.play_time_changed.connect(self.update_loop_length)  # Connect to signal
+
+    def del_instrument(self, instrument):
+        return
 
     def update_loop_length(self):
         """Update the loop length label in the top bar."""

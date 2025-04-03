@@ -24,7 +24,7 @@ class InstrumentRowWidget(QWidget):
       - Plays the arpeggios of each arp block in after each other
     """
     play_time_changed = Signal()
-
+    
     def __init__(self, synth, instrument_row_id, parent=None):
         # ========================= Layout Setup =========================
         super().__init__(parent)
@@ -49,8 +49,8 @@ class InstrumentRowWidget(QWidget):
         # Volume slider + label
         volume_label = QLabel("Volume:")
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
-        self.volume_slider.setRange(0, 100)
-        self.volume_slider.setValue(75)
+        self.volume_slider.setRange(0, 127)
+        self.volume_slider.setValue(64)
 
         # Horizontal mini‐layout for volume
         volume_layout = QHBoxLayout()
@@ -70,12 +70,18 @@ class InstrumentRowWidget(QWidget):
         self.instrument_combo.setCurrentIndex(0)
         self.instrument_combo.currentIndexChanged.connect(self.change_instrument)
 
+
+        #"Delete instrument" row
+        self.btn_del_instrument = QPushButton("Delete instrument")
+        self.btn_del_instrument.clicked.connect(self.del_instrument)
+
         # Add them to settings_layout
         settings_layout.addWidget(self.mute_checkbox)
         settings_layout.addLayout(volume_layout)
         settings_layout.addWidget(instrument_label)
         settings_layout.addWidget(self.instrument_combo)
         settings_layout.addWidget(self.btn_do)
+        settings_layout.addWidget(self.btn_del_instrument)
         settings_layout.addStretch()
 
         # ---------- Horizontal area for Arpeggiator blocks ----------
@@ -88,6 +94,7 @@ class InstrumentRowWidget(QWidget):
         self.btn_add_arp.setToolTip("Add another Arpeggiator block")
         self.btn_add_arp.clicked.connect(lambda: self.add_arpeggiator_block(repetitions=1))
 
+    
         # Put the button in first. New blocks get inserted before it.
         self.arps_layout.addWidget(self.btn_add_arp)
 
@@ -114,7 +121,7 @@ class InstrumentRowWidget(QWidget):
         self.arps_layout.removeWidget(self.btn_add_arp)
 
         arp_id = len(self.arp_blocks)
-        new_block = ArpeggiatorBlockWidget(repetitions=repetitions, id=arp_id)
+        new_block = ArpeggiatorBlockWidget(parent=self, repetitions=repetitions, id=arp_id)
         self.arp_blocks.append(new_block)
 
         # Add the index of the new block to the queue for each repetition
@@ -131,6 +138,51 @@ class InstrumentRowWidget(QWidget):
         new_block.play_time_changed.connect(self._on_block_changed)
         self.play_time_changed.emit()
 
+    def remove_arp_block(self, block):
+        """
+        Remove an arpeggiator block from this instrument row.
+        Args:
+            block: The ArpeggiatorBlockWidget to remove
+        """
+        if block in self.arp_blocks:
+            # Get the block ID
+            block_id = self.arp_blocks.index(block)
+            
+            # Remove from layout and disconnect signals
+            self.arps_layout.removeWidget(block)
+            block.play_time_changed.disconnect(self._on_block_changed)
+            block.deleteLater()  # Schedule the widget for deletion
+            
+            # Remove from our list
+            self.arp_blocks.remove(block)
+            
+            # Update IDs for remaining blocks
+            for i, remaining_block in enumerate(self.arp_blocks):
+                remaining_block.id = i
+            
+            # Update arp_queue to remove references to this block
+            # and update indices for blocks that come after it
+            new_queue = []
+            for idx in self.arp_queue:
+                if idx < block_id:
+                    new_queue.append(idx)  # Keep the same index for blocks before
+                elif idx > block_id:
+                    new_queue.append(idx - 1)  # Reduce index for blocks after
+                # Skip indexes that match block_id
+                
+            self.arp_queue = new_queue
+            
+            # Reset queue index if needed
+            if self.arp_queue and self.arp_queue_idx >= len(self.arp_queue):
+                self.arp_queue_idx = 0
+            
+            # Notify that play time has changed
+            self.play_time_changed.emit()
+
+
+    def del_instrument(self):
+        if self.parent():
+            self.parent().del_instrument(self)
     def _on_block_changed(self):
         self.play_time_changed.emit()
     
@@ -170,3 +222,4 @@ class InstrumentRowWidget(QWidget):
             play_time += block.get_play_time(bpm)
 
         return play_time
+
