@@ -127,14 +127,41 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         super().closeEvent(event)
 
     def add_instrument(self):
-        row = InstrumentRowWidget(self.synth, len(self.instrument_rows))
+        row = InstrumentRowWidget(self.synth, len(self.instrument_rows), parent=self)
         self.instrument_rows.append(row)
         index_for_button = self.vlayout.count() - 1
         self.vlayout.insertWidget(index_for_button, row)
         row.play_time_changed.connect(self.update_loop_length)  # Connect to signal
 
     def del_instrument(self, instrument):
-        return
+        """
+        Remove an instrument row from the main window without stopping playback.
+        Args:
+            instrument: The InstrumentRowWidget to remove
+        """
+        if instrument in self.instrument_rows:
+            # Get the row index
+            row_index = self.instrument_rows.index(instrument)
+            
+            # Remove from layout and disconnect signals
+            self.vlayout.removeWidget(instrument)
+            instrument.play_time_changed.disconnect(self.update_loop_length)
+            
+            # Clean up the instrument's resources
+            instrument.deleteLater()
+            
+            # Remove from our list
+            self.instrument_rows.remove(instrument)
+            
+            # Update channel IDs for remaining instruments
+            for i, row in enumerate(self.instrument_rows):
+                row.id = i
+                # Update the instrument in the synth to use the new channel
+                row.synth.change_instrument(i, row.instrument)
+            
+            # Update the loop length
+            self.update_loop_length()
+
 
     def update_loop_length(self):
         """Update the loop length label in the top bar."""
