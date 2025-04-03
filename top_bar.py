@@ -1,6 +1,9 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSpinBox, QStyle, QLabel
+import json
+import os
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSpinBox, QStyle, QLabel, QFileDialog, QMainWindow
 from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QShortcut, QKeySequence
+from save_load import save_project, load_project
 
 
 class TopBarWidget(QWidget):
@@ -28,14 +31,13 @@ class TopBarWidget(QWidget):
         # --- BPM label ---
         self.bpm_label = QLabel("BPM (Quarter Notes):")
         self.bpm_label.setToolTip("BPM is expressed in quarter notes")
-        # self.bpm_label.setPixmap(QIcon("path/to/quarter_note_icon.png").pixmap(16, 16))  # no icon yet, I am scared of copyright issues
 
         # --- BPM spinbox ---
         self.rate_spin = QSpinBox()
         self.rate_spin.setRange(20, 300)
         self.rate_spin.setValue(60)
         self.rate_spin.setToolTip("BPM")
-        self.rate_spin.valueChanged.connect(self._on_bpm_changed)  # Connect to signal
+        self.rate_spin.valueChanged.connect(self._on_bpm_changed)
 
         # --- Loop length info box ---
         self.loop_length_label = QLabel("Loop Length: 0.60s")
@@ -45,10 +47,12 @@ class TopBarWidget(QWidget):
         self.save_button = QPushButton()
         self.save_button.setIcon(self.style().standardIcon(QStyle.SP_DialogSaveButton))
         self.save_button.setToolTip("Save")
+        self.save_button.clicked.connect(self.on_save_clicked)
 
         self.load_button = QPushButton()
         self.load_button.setIcon(self.style().standardIcon(QStyle.SP_DialogOpenButton))
         self.load_button.setToolTip("Load")
+        self.load_button.clicked.connect(self.on_load_clicked)
 
         # Add them to layout
         layout.addWidget(self.play_button)
@@ -69,6 +73,12 @@ class TopBarWidget(QWidget):
         """Return the current BPM value."""
         return self.rate_spin.value()
     
+    @bpm.setter
+    def bpm(self, value: int):
+        """Set the BPM value and emit the signal."""
+        self.rate_spin.setValue(value)
+        self.bpm_changed.emit(value)
+    
     def _on_bpm_changed(self, value: int):
         self.bpm_changed.emit(value)
     
@@ -84,3 +94,32 @@ class TopBarWidget(QWidget):
         else:
             self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
             print("Stopped playing")
+
+    def main_window(self):
+        """Find the LoopArpeggiatorMainWindow this widget belongs to."""
+        widget = self
+        while widget is not None:
+            if isinstance(widget, QMainWindow):
+                return widget
+            widget = widget.parent()
+        return None
+
+    def on_save_clicked(self):
+        save_dir = os.path.join(os.path.dirname(__file__), "saves")
+        os.makedirs(save_dir, exist_ok=True)
+
+        filename, _ = QFileDialog.getSaveFileName(self, "Save Project", save_dir, "JSON Files (*.json)")
+        if filename:
+            mw = self.main_window()
+            if mw:
+                save_project(mw, filename=filename)
+
+    def on_load_clicked(self):
+        save_dir = os.path.join(os.path.dirname(__file__), "saves")
+        os.makedirs(save_dir, exist_ok=True)
+
+        filename, _ = QFileDialog.getOpenFileName(self, "Load Project", save_dir, "JSON Files (*.json)")
+        if filename:
+            mw = self.main_window()
+            if mw:
+                load_project(mw, filename=filename)

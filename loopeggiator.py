@@ -48,7 +48,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         # ============================================================
         # 1) TOP BAR
         # ============================================================
-        self.top_bar = TopBarWidget()
+        self.top_bar = TopBarWidget(self)
         self.main_layout.addWidget(self.top_bar)
         self.top_bar.bpm_changed.connect(self.update_loop_length)  # Connect to signal
 
@@ -132,6 +132,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         index_for_button = self.vlayout.count() - 1
         self.vlayout.insertWidget(index_for_button, row)
         row.play_time_changed.connect(self.update_loop_length)  # Connect to signal
+        return row
 
     def del_instrument(self, instrument):
         """

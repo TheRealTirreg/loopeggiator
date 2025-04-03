@@ -69,8 +69,6 @@ class ArpeggiatorBlockWidget(QWidget):
         self.loop_spin.setRange(1, 16)
         self.loop_spin.setValue(repetitions)
 
-
-
         # delete button
         spacer = QSpacerItem(100, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.delete_button = QPushButton()  # Remplace par ton icône si nécessaire
@@ -85,13 +83,6 @@ class ArpeggiatorBlockWidget(QWidget):
         loop_layout.addItem(spacer)
         loop_layout.addWidget(self.delete_button)
     
-        
-
-      
-
-        
-        
-
         # The ArpeggiatorWidget with an optional fixed or min size
         self.arp_widget = ArpeggiatorWidget(parent=self)
         # If you want a strict fixed size, uncomment:
@@ -488,10 +479,16 @@ class ArpeggiatorWidget(QWidget):
         # Set the clicked button to checked
         sender.setChecked(True)
 
+    def set_mode(self, mode: Mode):
+        """Set the arpeggiator mode and update button states without triggering events."""
+        self.arp.mode = mode
+        self.btn_up.setChecked(mode == Mode.UP)
+        self.btn_down.setChecked(mode == Mode.DOWN)
+        self.btn_random.setChecked(mode == Mode.RANDOM)
+
     # ---------------------------------------------------------------------------------------
     # VARIANT 1, 2, 3 ACTIVATION
     # ---------------------------------------------------------------------------------------
-
     def on_variant1_button_toggled(self, checked: bool):
         self.arp.variants_active[0] = checked
         self.update_button_color(self.variant1_button, checked)
@@ -542,6 +539,39 @@ class ArpeggiatorWidget(QWidget):
         self.variant3_slider.setValue(spin_value)
         self.variant3_slider.blockSignals(False)
         self.arp.variants[2] = spin_value
+
+    # ---------------------------------------------------------------------------------------
+    # VARIANTS again
+    # ---------------------------------------------------------------------------------------
+    def set_variants(self, active: list[bool], values: list[int]):
+        """Set variant activations and offsets safely without toggling signals."""
+
+        if len(active) != 3 or len(values) != 3:
+            return  # ignore malformed data
+
+        self.arp.variants_active = active
+        self.arp.variants = values
+
+        # Buttons
+        self.variant1_button.setChecked(active[0])
+        self.update_button_color(self.variant1_button, active[0])
+
+        self.variant2_button.setChecked(active[1])
+        self.update_button_color(self.variant2_button, active[1])
+
+        self.variant3_button.setChecked(active[2])
+        self.update_button_color(self.variant3_button, active[2])
+
+        # Spin boxes
+        self.variant1_spin.setValue(values[0])
+        self.variant2_spin.setValue(values[1])
+        self.variant3_spin.setValue(values[2])
+
+        # Sliders
+        self.variant1_slider.setValue(values[0])
+        self.variant2_slider.setValue(values[1])
+        self.variant3_slider.setValue(values[2])
+
 
 def main():
     app = QApplication(sys.argv)
