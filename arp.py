@@ -21,7 +21,7 @@ class Arpeggiator():
     - Have variants:
         - Variants are notes defined by offsets in relation to the ground note
     """
-    def __init__(self, bpm_multiplier: float, note_length: float, ground_note: int, mode: Mode, mute: bool, variants_active, variants):
+    def __init__(self, bpm_multiplier: float, note_length: float, ground_note: int, mode: Mode, mute: bool, volume: int, variants_active, variants):
         # rate: If rate 1, the arpeggio plays at the same speed as the song
         self.rate = bpm_multiplier
         # Determines if the arpeggio is more staccato or legato
@@ -30,7 +30,7 @@ class Arpeggiator():
         self.ground_note = ground_note
         # Mode of the arpeggio (up, down, random)
         self.mode = mode
-        #self.velocity = volume
+        self.velocity = volume
         # e.g. [True, False, False] for one out of three variants active
         self.variants_active = variants_active
         # e.g. [7, 5, 0] Describes the offset in relation to the gound note. Only relevant if variants_active is True
@@ -74,10 +74,10 @@ class Arpeggiator():
         # and then we wait (time_step - note_duration) before the next note_on
         for i, note in enumerate(notes):
             if not self.mute:
-                track.append(mido.Message('note_on', note=note, velocity=64, time=0))
+                track.append(mido.Message('note_on', note=note, velocity=self.velocity, time=0))
             else:
-                track.append(mido.Message('note_off', note=note, velocity=64, time=0))
-            track.append(mido.Message('note_off', note=note, velocity=64, time=note_duration))
+                track.append(mido.Message('note_off', note=note, velocity=self.velocity, time=0))
+            track.append(mido.Message('note_off', note=note, velocity=self.velocity, time=note_duration))
 
             # add gap to account for note_length (pause between notes)
             if i < len(notes) - 1:

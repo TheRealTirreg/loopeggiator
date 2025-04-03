@@ -24,7 +24,7 @@ class InstrumentRowWidget(QWidget):
       - Plays the arpeggios of each arp block in after each other
     """
     play_time_changed = Signal()
-    
+    volume_line_changed = Signal()
     def __init__(self, synth, instrument_row_id, parent=None):
         # ========================= Layout Setup =========================
         super().__init__(parent)
@@ -51,7 +51,7 @@ class InstrumentRowWidget(QWidget):
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 127)
         self.volume_slider.setValue(64)
-
+        self.volume_slider.valueChanged.connect(self.update_arp_volumes)
         # Horizontal mini‐layout for volume
         volume_layout = QHBoxLayout()
         volume_layout.addWidget(volume_label)
@@ -137,6 +137,7 @@ class InstrumentRowWidget(QWidget):
         # Connect signals
         new_block.play_time_changed.connect(self._on_block_changed)
         self.play_time_changed.emit()
+        
 
     def remove_arp_block(self, block):
         """
@@ -223,3 +224,12 @@ class InstrumentRowWidget(QWidget):
 
         return play_time
 
+
+    def update_arp_volumes(self):
+        """Propage les changements de volume à tous les blocs d'arpège"""
+        volume = self.volume_slider.value()
+        self.volume_slider.blockSignals(True)
+        for arp_block in self.arp_blocks:
+            arp_block.velocity = volume
+        self.volume_slider.blockSignals(False)
+        self.volume_line_changed.emit()

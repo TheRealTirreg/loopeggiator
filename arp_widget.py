@@ -36,7 +36,8 @@ class ArpeggiatorBlockWidget(QWidget):
     def __init__(self, parent=None, repetitions=1, id=0):
         self.id = id
         self.iteration = 0  # Current iteration of the arpeggiator, up to repetitions - 1
-        #self.velocity = 20
+        self.velocity = 64
+        self.parent = parent
         if parent:
             self.velocity = parent.volume_slider.value()
 
@@ -92,7 +93,7 @@ class ArpeggiatorBlockWidget(QWidget):
         
 
         # The ArpeggiatorWidget with an optional fixed or min size
-        self.arp_widget = ArpeggiatorWidget()
+        self.arp_widget = ArpeggiatorWidget(parent=self)
         # If you want a strict fixed size, uncomment:
         # self.arp_widget.setFixedSize(QSize(300, 220))
         # Or if you want it to be just enough for the controls:
@@ -159,14 +160,15 @@ class ArpeggiatorWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-
+        self.parent = parent
         # Arp functionality
         default_rate = 1.  # BPM multiplier
         default_note_len = 0.2
         default_ground_note = 60  # Midi C4
         default_mode = Mode.UP
         default_mute = False
-        #default_volume = parent.velocity
+        default_volume = parent.velocity
+        print("here is def vol", default_volume)
         default_variants_active = [False, False, False]
         default_variants = [0, 0, 0]
         self.arp = Arpeggiator(
@@ -175,7 +177,7 @@ class ArpeggiatorWidget(QWidget):
             default_ground_note,
             default_mode,
             default_mute,
-            #default_volume,
+            default_volume,
             default_variants_active,
             default_variants
         )
@@ -211,7 +213,8 @@ class ArpeggiatorWidget(QWidget):
         self.rate_slider.valueChanged.connect(self.on_rate_slider_changed)
         self.rate_spin.valueChanged.connect(self.on_rate_spin_changed)
 
-       
+        parent.parent.volume_line_changed.connect(self.change_arp_volume)
+        
         # ==================== 2) Note Length [0..1, step=0.1] ====================
         self.note_length_slider = QSlider(Qt.Orientation.Horizontal)
         self.note_length_slider.setRange(0, 10)  # each step => 0.1
@@ -416,6 +419,8 @@ class ArpeggiatorWidget(QWidget):
         
         
 
+    def change_arp_volume(self):
+        self.arp.velocity = self.parent.velocity
 
     # ---------------------------------------------------------------------------------------
     # NOTE LENGTH
