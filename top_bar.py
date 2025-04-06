@@ -29,13 +29,12 @@ class TopBarWidget(QWidget):
         play_shortcut.activated.connect(self.play_button.toggle)
 
         # --- BPM label ---
-        self.bpm_label = QLabel("BPM (Quarter Notes):")
-        self.bpm_label.setToolTip("BPM is expressed in quarter notes")
+        self.bpm_label = QLabel("BPM:")
 
         # --- BPM spinbox ---
         self.rate_spin = QSpinBox()
         self.rate_spin.setRange(20, 300)
-        self.rate_spin.setValue(60)
+        self.rate_spin.setValue(120)
         self.rate_spin.setToolTip("BPM")
         self.rate_spin.valueChanged.connect(self._on_bpm_changed)
 

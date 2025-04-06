@@ -55,8 +55,6 @@ class SynthPlayer:
                 self.fs.noteon(channel, msg.note, velocity)
             elif msg.type == 'note_off':
                 self.fs.noteoff(channel, msg.note)
-            elif msg.type == 'text' and msg.text == 'wait_end_of_track':
-                pass  # Wait until the end of one loop
             else:
                 print(f"Unknown message type: {msg.type}")
 

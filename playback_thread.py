@@ -1,6 +1,4 @@
-import time
-import mido
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread
 
 
 class PlaybackThread(QThread):

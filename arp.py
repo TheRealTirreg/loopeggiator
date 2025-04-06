@@ -61,7 +61,8 @@ class Arpeggiator():
         # e.g. if rate=2, the arpeggio plays twice as fast as the song
         #      if note_length=0.5, the arpeggio plays each note half as long
         #      if note_length=1 (max value), the arpeggio plays legato
-        note_duration = (60*4 / bpm) * (self.note_length / self.rate) / len(notes)
+        note_duration = (60 / bpm) * (self.note_length / self.rate) / len(notes)
+        max_note_duration = (60 / bpm) * (1 / self.rate) / len(notes)  # max note length is 1 (legato)
 
         # Not to be confused with note_duration
         # time_step is the time between each note in the arpeggio
@@ -78,10 +79,11 @@ class Arpeggiator():
             else:
                 track.append(mido.Message('note_off', note=note, velocity=self.velocity, time=0))
             track.append(mido.Message('note_off', note=note, velocity=self.velocity, time=note_duration))
+            # Wait until the next note is played to enable shorter note lengths
+            track.append(mido.Message('note_off', note=note, velocity=self.velocity, time=max_note_duration - note_duration))
 
             # Calculate the total time for the arpeggio
             total_time += time_step
-        
         return track, total_time
 
 
