@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 import os_check  # Ensures this script also works on Windows
-from instrument_widget import InstrumentRowWidget
+from instrument_row_container import InstrumentRowContainer
 from top_bar import TopBarWidget
 from synthplayer import SynthPlayer
 from playback_thread import PlaybackThread
@@ -139,7 +139,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
             row.set_block_width(max_rate)
 
     def add_instrument(self):
-        row = InstrumentRowWidget(self.synth, len(self.instrument_rows), parent=self)
+        row = InstrumentRowContainer(self.synth, len(self.instrument_rows), parent=self)
         self.instrument_rows.append(row)
         index_for_button = self.vlayout.count() - 1
         self.vlayout.insertWidget(index_for_button, row)
