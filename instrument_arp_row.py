@@ -52,6 +52,44 @@ class InstrumentArpPanel(QWidget):
         for block in self.arp_blocks:
             block.setFixedWidth(min_block_width * (max_rate / block.rate))
 
+    def _rebuild_layout(self):
+        # Remove all widgets
+        for i in reversed(range(self.layout.count())):
+            widget = self.layout.itemAt(i).widget()
+            if widget:
+                self.layout.removeWidget(widget)
+                widget.setParent(None)
+
+        # Re-add in new order
+        for i, block in enumerate(self.arp_blocks):
+            block.id = i
+            self.layout.addWidget(block)
+
+        # Add the "+" button at the end again
+        self.layout.addWidget(self.btn_add)
+
+    def _rebuild_queue(self):
+        self.arp_queue.clear()
+        for i, block in enumerate(self.arp_blocks):
+            self.arp_queue.extend([i] * block.repetitions)
+        self.arp_queue_idx = 0
+
+    def move_block_left(self, block):
+        idx = self.arp_blocks.index(block)
+        if idx > 0:
+            self.arp_blocks[idx], self.arp_blocks[idx - 1] = self.arp_blocks[idx - 1], self.arp_blocks[idx]
+            self._rebuild_queue()
+            self._rebuild_layout()
+            self.play_time_changed.emit()
+
+    def move_block_right(self, block):
+        idx = self.arp_blocks.index(block)
+        if idx < len(self.arp_blocks) - 1:
+            self.arp_blocks[idx], self.arp_blocks[idx + 1] = self.arp_blocks[idx + 1], self.arp_blocks[idx]
+            self._rebuild_queue()
+            self._rebuild_layout()
+            self.play_time_changed.emit()
+
     def remove_block(self, block):
         if block in self.arp_blocks:
             block_id = self.arp_blocks.index(block)

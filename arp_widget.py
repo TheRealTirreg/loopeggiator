@@ -70,6 +70,20 @@ class ArpeggiatorBlockWidget(QWidget):
         self.loop_spin.setRange(1, 16)
         self.loop_spin.setValue(repetitions)
 
+        # Move left button
+        self.move_left_button = QPushButton()
+        self.move_left_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowLeft))
+        self.move_left_button.setIconSize(QSize(16, 16))
+        self.move_left_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.move_left_button.clicked.connect(self.move_left)
+
+        # Move right button
+        self.move_right_button = QPushButton()
+        self.move_right_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowRight))
+        self.move_right_button.setIconSize(QSize(16, 16))
+        self.move_right_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.move_right_button.clicked.connect(self.move_right)
+
         # delete button
         spacer = QSpacerItem(100, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.delete_button = QPushButton()  # Remplace par ton icône si nécessaire
@@ -82,6 +96,8 @@ class ArpeggiatorBlockWidget(QWidget):
         loop_layout.addWidget(loop_label)
         loop_layout.addWidget(self.loop_spin) 
         loop_layout.addItem(spacer)
+        loop_layout.addWidget(self.move_left_button)
+        loop_layout.addWidget(self.move_right_button)
         loop_layout.addWidget(self.delete_button)
     
         # The ArpeggiatorWidget with an optional fixed or min size
@@ -142,6 +158,14 @@ class ArpeggiatorBlockWidget(QWidget):
         # e.g.: If rate=2 => half the time
         total_time = (1 / self.arp_widget.arp.rate) * (60 / bpm) * self.repetitions
         return total_time
+
+    def move_left(self):
+        if self.parent:
+            self.parent.move_block_left(self)
+
+    def move_right(self):
+        if self.parent:
+            self.parent.move_block_right(self)
 
     def remove_block(self):
         if self.parent:

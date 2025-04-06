@@ -12,9 +12,10 @@ A simple arpeggiator in python.
 - [ ] Effets de son
 - [ ] Adjust front end so it shows where we are on the beat atm
 - [ ] Report
-- [ ] Move arps left and right
+- [x] Move arps left and right
 
 ### Optional
 
 - [ ] Limit to max_rows rows (16)
 - [ ] Arp volume?
+- [ ] Vertical scrolling, scrolling in general
