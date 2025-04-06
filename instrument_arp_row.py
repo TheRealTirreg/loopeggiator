@@ -74,5 +74,3 @@ class InstrumentArpPanel(QWidget):
                 self.arp_queue_idx = 0
 
             self.play_time_changed.emit()
-
-

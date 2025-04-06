@@ -1,5 +1,6 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QScrollArea
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QScrollArea, QSizePolicy
 from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QWheelEvent
 from instrument_settings_widget import InstrumentSettingsPanel
 from instrument_arp_row import InstrumentArpPanel
 
@@ -25,6 +26,9 @@ class InstrumentRowContainer(QWidget):
         self.settings_panel.btn_del.clicked.connect(self.del_instrument)
 
         self.arp_panel.play_time_changed.connect(self._on_block_changed)
+
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.setMinimumHeight(340)  # or whatever makes sense visually
 
         # Scrollable ArpPanel only
         scroll_area = QScrollArea()

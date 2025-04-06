@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from arp_widget import ArpeggiatorBlockWidget
 
+"""DEPRECATED: Moved to instrument_arp_row.py"""
 
 class InstrumentRowWidget(QWidget):
     """
