@@ -91,6 +91,7 @@ class InstrumentRowWidget(QWidget):
         # “Add Arpeggiator” button at the end
         self.btn_add_arp = QPushButton("+")
         self.btn_add_arp.setToolTip("Add another Arpeggiator block")
+        self.btn_add_arp.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.btn_add_arp.clicked.connect(lambda: self.add_arpeggiator_block(repetitions=1))
 
     
