@@ -50,7 +50,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         # ============================================================
         self.top_bar = TopBarWidget(self)
         self.main_layout.addWidget(self.top_bar)
-        self.top_bar.bpm_changed.connect(self.update_loop_length)  # Connect to signal
+        self.top_bar.bpm_changed.connect(self._on_play_time_changed)  # Connect to signal
 
         # ============================================================
         # 2) CENTRAL AREA (scrollable Instrument rows + "Add Instrument")
@@ -65,9 +65,6 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         # "Add Instrument" button at bottom
         self.btn_add_instrument = QPushButton("Add Instrument")
         self.btn_add_instrument.clicked.connect(self.add_instrument)
-
-
-        
 
         # Add the first instrument row by default
         self.add_instrument()
@@ -91,6 +88,12 @@ class LoopArpeggiatorMainWindow(QMainWindow):
 
         # Connect the play button to the playback function
         self.top_bar.play_button.toggled.connect(self.on_play_toggled)
+
+    def _on_play_time_changed(self):
+        """Called when the play time changes in any row."""
+        print("Width update")
+        self.update_loop_length()
+        self.setArpBlockWidth()
 
     def on_play_toggled(self, checked):
         """Switch between play and stop icons depending on toggle state."""
@@ -126,12 +129,23 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         self.stop_playback()
         super().closeEvent(event)
 
+    def setArpBlockWidth(self):
+        """Set the width of the arpeggiator blocks based on their rate."""
+        max_rate = 0
+        for row in self.instrument_rows:
+            for block in row.arp_blocks:
+                max_rate = max(max_rate, block.rate)
+        
+        for row in self.instrument_rows:
+            row.set_block_width(max_rate)
+
     def add_instrument(self):
         row = InstrumentRowWidget(self.synth, len(self.instrument_rows), parent=self)
         self.instrument_rows.append(row)
         index_for_button = self.vlayout.count() - 1
         self.vlayout.insertWidget(index_for_button, row)
-        row.play_time_changed.connect(self.update_loop_length)  # Connect to signal
+        row.play_time_changed.connect(self._on_play_time_changed)  # Connect to signal
+        self._on_play_time_changed()
         return row
 
     def del_instrument(self, instrument):
@@ -146,7 +160,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
             
             # Remove from layout and disconnect signals
             self.vlayout.removeWidget(instrument)
-            instrument.play_time_changed.disconnect(self.update_loop_length)
+            instrument.play_time_changed.disconnect(self._on_play_time_changed)
             
             # Clean up the instrument's resources
             instrument.deleteLater()
@@ -160,9 +174,8 @@ class LoopArpeggiatorMainWindow(QMainWindow):
                 # Update the instrument in the synth to use the new channel
                 row.synth.change_instrument(i, row.instrument)
             
-            # Update the loop length
-            self.update_loop_length()
-
+            # Update the loop length and block widths
+            self._on_play_time_changed()
 
     def update_loop_length(self):
         """Update the loop length label in the top bar."""

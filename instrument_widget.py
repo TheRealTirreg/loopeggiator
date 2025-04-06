@@ -70,8 +70,7 @@ class InstrumentRowWidget(QWidget):
         self.instrument_combo.setCurrentIndex(0)
         self.instrument_combo.currentIndexChanged.connect(self.change_instrument)
 
-
-        #"Delete instrument" row
+        # "Delete instrument" row
         self.btn_del_instrument = QPushButton("Delete instrument")
         self.btn_del_instrument.clicked.connect(self.del_instrument)
 
@@ -137,7 +136,18 @@ class InstrumentRowWidget(QWidget):
         # Connect signals
         new_block.play_time_changed.connect(self._on_block_changed)
         self.play_time_changed.emit()
-        
+
+    def set_block_width(self, max_rate):
+        """
+        Sets the width of each arpeggiator block based on its rate.
+        If the max_rate (the largest rate of any arp block in any instrument row) is e.g. 2,
+            then we want any block with a rate of 1 to have twice the width of a block with a rate of 2.
+            (And a block with a rate of 0.5 should have 4 times the width of a block with a rate of 2 and so on.)
+        """
+        min_block_width = ArpeggiatorBlockWidget.minimal_block_width
+        for block in self.arp_blocks:
+            width = min_block_width * (max_rate / block.rate)  # In pixels
+            block.setFixedWidth(width)
 
     def remove_arp_block(self, block):
         """
@@ -179,7 +189,6 @@ class InstrumentRowWidget(QWidget):
             
             # Notify that play time has changed
             self.play_time_changed.emit()
-
 
     def del_instrument(self):
         if self.parent:

@@ -33,6 +33,9 @@ class ArpeggiatorBlockWidget(QWidget):
     """
     play_time_changed = Signal()
     mute_change = Signal()
+
+    minimal_block_width = 500  # Minimum width (in pixel) for the arpeggiator block
+
     def __init__(self, parent=None, repetitions=1, id=0):
         self.id = id
         self.iteration = 0  # Current iteration of the arpeggiator, up to repetitions - 1
@@ -110,6 +113,10 @@ class ArpeggiatorBlockWidget(QWidget):
         self.play_time_changed.emit()
 
     @property
+    def rate(self):
+        return self.arp_widget.rate
+
+    @property
     def repetitions(self):
         """Get the total loop count"""
         return self.loop_spin.value()
@@ -156,7 +163,6 @@ class ArpeggiatorWidget(QWidget):
         default_mode = Mode.UP
         default_mute = False
         default_volume = parent.velocity
-        print("here is def vol", default_volume)
         default_variants_active = [False, False, False]
         default_variants = [0, 0, 0]
         self.arp = Arpeggiator(
@@ -358,6 +364,10 @@ class ArpeggiatorWidget(QWidget):
         main_layout.addLayout(form_layout)
         self.setLayout(main_layout)
         self.setWindowTitle("Arpeggiator (Mode + Variant Activation)")
+
+    @property
+    def rate(self):
+        return self.arp.rate
 
     # ---------------------------------------------------------------------------------------
     # Helper to change button color for Variant toggles
