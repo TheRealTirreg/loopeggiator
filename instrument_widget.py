@@ -192,7 +192,6 @@ class InstrumentRowWidget(QWidget):
 
     def del_instrument(self):
         if self.parent:
-            print("je rentre ici")
             self.parent.del_instrument(self)
     def _on_block_changed(self):
         self.play_time_changed.emit()

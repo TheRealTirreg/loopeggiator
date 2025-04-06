@@ -91,7 +91,6 @@ class LoopArpeggiatorMainWindow(QMainWindow):
 
     def _on_play_time_changed(self):
         """Called when the play time changes in any row."""
-        print("Width update")
         self.update_loop_length()
         self.setArpBlockWidth()
 
