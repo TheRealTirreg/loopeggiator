@@ -47,11 +47,14 @@ class ArpeggiatorBlockWidget(QWidget):
         mode=Mode.UP,
         mute=False,
         variants_active=None,
+        chords_active=None,
         variants=None,
         volume_line_signal=None
     ):
         if variants_active is None:
             variants_active = [False, False, False]
+        if chords_active is None:
+            chords_active = [False, False, False]
         if variants is None:
             variants = [0, 0, 0]
 
@@ -133,6 +136,7 @@ class ArpeggiatorBlockWidget(QWidget):
             mode=mode,
             mute=mute,
             variants_active=variants_active,
+            chords_active=chords_active,
             variants=variants,
             volume_line_signal=volume_line_signal
         )
@@ -168,6 +172,7 @@ class ArpeggiatorBlockWidget(QWidget):
             "mode": arp.mode,
             "mute": arp.mute,
             "variants_active": arp.variants_active,
+            "chords_active": arp.chords_active,
             "variants": arp.variants
         }
     
@@ -216,10 +221,13 @@ class ArpeggiatorWidget(QWidget):
         mute=False,
         variants_active=None,
         variants=None,
+        chords_active=None,
         volume_line_signal=None
     ):
         if variants_active is None:
             variants_active = [False, False, False]
+        if chords_active is None:
+            chords_active = [False, False, False]
         if variants is None:
             variants = [0, 0, 0]
 
@@ -237,6 +245,7 @@ class ArpeggiatorWidget(QWidget):
             mute,
             velocity,
             variants_active,
+            chords_active,
             variants
         )
         
@@ -350,29 +359,29 @@ class ArpeggiatorWidget(QWidget):
         # ==================== ACTIVATION BUTTONS (Variants Active) ====================
         activation_layout = QHBoxLayout()
 
-        self.variant1_button = QPushButton("Variant 1")
+        self.variant1_button = QPushButton("major")
         self.variant1_button.setCheckable(True)
-        self.variant1_button.setChecked(variants_active[0])  # default on
-        self.update_button_color(self.variant1_button, variants_active[0])
-        self.variant1_button.toggled.connect(lambda checked: self.on_variant1_button_toggled(checked))
+        self.variant1_button.setChecked(chords_active[0])  # default on
+        self.update_button_color(self.variant1_button, chords_active[0])
+        self.variant1_button.toggled.connect(lambda checked: self.on_major_button_toggled(checked))
 
-        self.variant2_button = QPushButton("Variant 2")
+        self.variant2_button = QPushButton("minor")
         self.variant2_button.setCheckable(True)
-        self.variant2_button.setChecked(variants_active[1])  # default off
-        self.update_button_color(self.variant2_button, variants_active[1])
-        self.variant2_button.toggled.connect(lambda checked: self.on_variant2_button_toggled(checked))
+        self.variant2_button.setChecked(chords_active[1])  # default off
+        self.update_button_color(self.variant2_button, chords_active[1])
+        self.variant2_button.toggled.connect(lambda checked: self.on_minor_button_toggled(checked))
 
-        self.variant3_button = QPushButton("Variant 3")
+        self.variant3_button = QPushButton("pentatonic")
         self.variant3_button.setCheckable(True)
-        self.variant3_button.setChecked(variants_active[2])  # default off
-        self.update_button_color(self.variant3_button, variants_active[2])
-        self.variant3_button.toggled.connect(lambda checked: self.on_variant3_button_toggled(checked))
+        self.variant3_button.setChecked(chords_active[2])  # default off
+        self.update_button_color(self.variant3_button, chords_active[2])
+        self.variant3_button.toggled.connect(lambda checked: self.on_penta_button_toggled(checked))
 
         activation_layout.addWidget(self.variant1_button)
         activation_layout.addWidget(self.variant2_button)
         activation_layout.addWidget(self.variant3_button)
 
-        form_layout.addRow("Variants Active:", activation_layout)
+        form_layout.addRow("Chords:", activation_layout)
 
         # ==================== Variant Offsets: -24..24, integer steps ====================
         self.variant1_slider = QSlider(Qt.Orientation.Horizontal)
@@ -384,10 +393,20 @@ class ArpeggiatorWidget(QWidget):
         self.variant1_spin.setValue(variants[0])
 
         row_layout_variant1 = QHBoxLayout()
+        self.active1_checkbox = QCheckBox()
+        self.active1_checkbox.setChecked(False)
+        label_layout = QHBoxLayout()
+        label_layout.setContentsMargins(0, 0, 0, 0)  # Pas de marges inutiles
+        label_layout.addWidget(QLabel("Variant 1:"))
+        label_layout.addWidget(self.active1_checkbox)
+        label_widget = QWidget()
+        label_widget.setLayout(label_layout)
+
         row_layout_variant1.addWidget(self.variant1_slider)
         row_layout_variant1.addWidget(self.variant1_spin)
-        form_layout.addRow("Variant 1 offset:", row_layout_variant1)
+        self.active1_checkbox.stateChanged.connect(lambda checked: self.on_variant1_button_toggled(checked))
 
+        form_layout.addRow(label_widget, row_layout_variant1)
         self.variant1_slider.valueChanged.connect(self.on_variant1_slider_changed)
         self.variant1_spin.valueChanged.connect(self.on_variant1_spin_changed)
 
@@ -400,12 +419,26 @@ class ArpeggiatorWidget(QWidget):
         self.variant2_spin.setValue(variants[1])
 
         row_layout_variant2 = QHBoxLayout()
+        self.active2_checkbox = QCheckBox()
+        self.active2_checkbox.setChecked(False)
+        label_layout = QHBoxLayout()
+        label_layout.setContentsMargins(0, 0, 0, 0)  # Pas de marges inutiles
+        label_layout.addWidget(QLabel("Variant 2:"))
+        label_layout.addWidget(self.active2_checkbox)
+        label_widget = QWidget()
+        label_widget.setLayout(label_layout)
+
         row_layout_variant2.addWidget(self.variant2_slider)
         row_layout_variant2.addWidget(self.variant2_spin)
-        form_layout.addRow("Variant 2 offset:", row_layout_variant2)
+        self.active2_checkbox.stateChanged.connect(lambda checked: self.on_variant2_button_toggled(checked))
 
+        form_layout.addRow(label_widget, row_layout_variant2)
+        
         self.variant2_slider.valueChanged.connect(self.on_variant2_slider_changed)
         self.variant2_spin.valueChanged.connect(self.on_variant2_spin_changed)
+
+
+
 
         self.variant3_slider = QSlider(Qt.Orientation.Horizontal)
         self.variant3_slider.setRange(-24, 24)
@@ -416,9 +449,21 @@ class ArpeggiatorWidget(QWidget):
         self.variant3_spin.setValue(variants[2])
 
         row_layout_variant3 = QHBoxLayout()
+        self.active3_checkbox = QCheckBox()
+        self.active3_checkbox.setChecked(False)
+        label_layout = QHBoxLayout()
+        label_layout.setContentsMargins(0, 0, 0, 0)  # Pas de marges inutiles
+        label_layout.addWidget(QLabel("Variant 3:"))
+        label_layout.addWidget(self.active3_checkbox)
+        label_widget = QWidget()
+        label_widget.setLayout(label_layout)
+
         row_layout_variant3.addWidget(self.variant3_slider)
         row_layout_variant3.addWidget(self.variant3_spin)
-        form_layout.addRow("Variant 3 offset:", row_layout_variant3)
+        self.active3_checkbox.stateChanged.connect(lambda checked: self.on_variant3_button_toggled(checked))
+
+        form_layout.addRow(label_widget, row_layout_variant3)
+        
 
         self.variant3_slider.valueChanged.connect(self.on_variant3_slider_changed)
         self.variant3_spin.valueChanged.connect(self.on_variant3_spin_changed)
@@ -562,14 +607,30 @@ class ArpeggiatorWidget(QWidget):
     # ---------------------------------------------------------------------------------------
     def on_variant1_button_toggled(self, checked: bool):
         self.arp.variants_active[0] = checked
-        self.update_button_color(self.variant1_button, checked)
+        #self.update_button_color(self.variant1_button, checked)
 
     def on_variant2_button_toggled(self, checked: bool):
         self.arp.variants_active[1] = checked
-        self.update_button_color(self.variant2_button, checked)
+        #self.update_button_color(self.variant2_button, checked)
 
     def on_variant3_button_toggled(self, checked: bool):
         self.arp.variants_active[2] = checked
+        #self.update_button_color(self.variant3_button, checked)
+
+
+     # ---------------------------------------------------------------------------------------
+    # CHORDS 1, 2, 3 ACTIVATION
+    # ---------------------------------------------------------------------------------------
+    def on_major_button_toggled(self, checked: bool):
+        self.arp.chords_active[0] = checked
+        self.update_button_color(self.variant1_button, checked)
+
+    def on_minor_button_toggled(self, checked: bool):
+        self.arp.chords_active[1] = checked
+        self.update_button_color(self.variant2_button, checked)
+
+    def on_penta_button_toggled(self, checked: bool):
+        self.arp.chords_active[2] = checked
         self.update_button_color(self.variant3_button, checked)
 
     # ---------------------------------------------------------------------------------------

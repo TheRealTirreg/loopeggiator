@@ -35,10 +35,13 @@ class InstrumentArpPanel(QWidget):
         ground_note=60,
         mode=Mode.UP,
         variants_active=None,
+        chords_active=None,
         variants=None,
     ):
         if variants_active is None:
             variants_active = [False, False, False]
+        if chords_active is None:
+            chords_active = [False, False, False]
         if variants is None:
             variants = [0, 0, 0]
 
@@ -55,6 +58,7 @@ class InstrumentArpPanel(QWidget):
             ground_note=ground_note,
             mode=mode,
             variants_active=variants_active,
+            chords_active=chords_active,
             variants=variants,
             volume_line_signal=self.row_container.volume_line_changed,
         )

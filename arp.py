@@ -22,7 +22,7 @@ class Arpeggiator():
     - Have variants:
         - Variants are notes defined by offsets in relation to the ground note
     """
-    def __init__(self, bpm_multiplier: float, note_length: float, ground_note: int, mode: Mode, mute: bool, volume: int, variants_active, variants):
+    def __init__(self, bpm_multiplier: float, note_length: float, ground_note: int, mode: Mode, mute: bool, volume: int, variants_active, chords_active, variants):
         # rate: If rate 1, the arpeggio plays at the same speed as the song
         self.rate = bpm_multiplier
         # Determines if the arpeggio is more staccato or legato
@@ -34,6 +34,8 @@ class Arpeggiator():
         self.velocity = volume
         # e.g. [True, False, False] for one out of three variants active
         self.variants_active = variants_active
+        # e.g. [True, False, False] for one out of three variants active
+        self.chords_active = chords_active
         # e.g. [7, 5, 0] Describes the offset in relation to the gound note. Only relevant if variants_active is True
         self.variants = variants
         # about the mute
@@ -50,6 +52,16 @@ class Arpeggiator():
             if self.variants_active[i]:
                 notes.append(self.ground_note + offset)
 
+        """
+        if self.chords_active[0]:
+            pass
+
+        if self.chords_active[1]:
+            pass     
+
+        if self.chords_active[2]:
+            pass
+        """
         if self.mode == Mode.UP:
             notes.sort()
         elif self.mode == Mode.DOWN:
@@ -95,6 +107,7 @@ if __name__ == "__main__":
         ground_note=60,
         mode=Mode.UP,
         variants_active=[False, False, False],
+        chords_active=[False, False, False],
         variants=[7, 5, 0]
     )
     for msg in arp.get_arpeggio(120, 0):
