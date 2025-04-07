@@ -36,9 +36,26 @@ class ArpeggiatorBlockWidget(QWidget):
 
     minimal_block_width = 500  # Minimum width (in pixel) for the arpeggiator block
 
-    def __init__(self, parent=None, repetitions=1, id=0, velocity=64, volume_line_signal=None):
+    def __init__(
+        self,
+        parent=None,
+        id=0,
+        velocity=64,
+        rate=1.0,
+        note_length=0.2,
+        ground_note=60,
+        mode=Mode.UP,
+        mute=False,
+        variants_active=None,
+        variants=None,
+        volume_line_signal=None
+    ):
+        if variants_active is None:
+            variants_active = [False, False, False]
+        if variants is None:
+            variants = [0, 0, 0]
+
         self.id = id
-        self.iteration = 0  # Current iteration of the arpeggiator, up to repetitions - 1
         self.velocity = velocity
         self.parent = parent
 
@@ -67,12 +84,15 @@ class ArpeggiatorBlockWidget(QWidget):
         frame_layout = QVBoxLayout(frame)
         frame_layout.setContentsMargins(5, 5, 5, 5)
 
-        # Top row: loop count
-        loop_layout = QHBoxLayout()
-        loop_label = QLabel("Loop count:")
-        self.loop_spin = QSpinBox()
-        self.loop_spin.setRange(1, 16)
-        self.loop_spin.setValue(repetitions)
+        # Top row for buttons
+        top_row_layout = QHBoxLayout()
+
+        # Duplicate button
+        self.duplicate_label = QLabel("Duplicate:")
+        self.btn_duplicate = QPushButton("📄")
+        self.btn_duplicate.setToolTip("Duplicate this arpeggiator block")
+        self.btn_duplicate.setFixedSize(24, 24)
+        self.btn_duplicate.clicked.connect(self.duplicate_block)
 
         # Move left button
         self.move_left_button = QPushButton()
@@ -97,34 +117,38 @@ class ArpeggiatorBlockWidget(QWidget):
         self.delete_button.clicked.connect(self.remove_block)
 
         # Add widgets side by side
-        loop_layout.addWidget(loop_label)
-        loop_layout.addWidget(self.loop_spin) 
-        loop_layout.addItem(spacer)
-        loop_layout.addWidget(self.move_left_button)
-        loop_layout.addWidget(self.move_right_button)
-        loop_layout.addWidget(self.delete_button)
+        top_row_layout.addWidget(self.duplicate_label)
+        top_row_layout.addWidget(self.btn_duplicate) 
+        top_row_layout.addItem(spacer)
+        top_row_layout.addWidget(self.move_left_button)
+        top_row_layout.addWidget(self.move_right_button)
+        top_row_layout.addWidget(self.delete_button)
     
-        self.arp_widget = ArpeggiatorWidget(parent=self, velocity=velocity, volume_line_signal=volume_line_signal)
+        self.arp_widget = ArpeggiatorWidget(
+            parent=self,
+            velocity=velocity,
+            rate=rate,
+            note_length=note_length,
+            ground_note=ground_note,
+            mode=mode,
+            mute=mute,
+            variants_active=variants_active,
+            variants=variants,
+            volume_line_signal=volume_line_signal
+        )
+
         # self.arp_widget.setFixedSize(QSize(300, 220))
         self.arp_widget.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
 
         # Add subwidgets to frame layout
-        frame_layout.addLayout(loop_layout)
+        frame_layout.addLayout(top_row_layout)
         frame_layout.addWidget(self.arp_widget)
 
         # Finally, put the frame in the outer layout
         outer_layout.addWidget(frame)
 
         # Connect signals
-        self.loop_spin.valueChanged.connect(self._on_repetitions_changed)
         self.arp_widget.play_time_changed.connect(self._on_arp_widget_changed)
-
-        self.update_size()
-
-    def _on_repetitions_changed(self):
-        """Update the loop count"""
-        self.update_size()
-        self.play_time_changed.emit()  # Emit signal to update total play time
 
     def _on_arp_widget_changed(self):
         """Give signal from arp widget through to parent"""
@@ -133,41 +157,36 @@ class ArpeggiatorBlockWidget(QWidget):
     @property
     def rate(self):
         return self.arp_widget.rate
-
-    @property
-    def repetitions(self):
-        """Get the total loop count"""
-        return self.loop_spin.value()
     
-    @repetitions.setter
-    def repetitions(self, value):
-        """Set the total loop count"""
-        self.loop_spin.setValue(value)
-        self.repetitions = value
-
-    def update_size(self):
-        """Scale the widget's width based on loop count."""
-        print(f"Update size: {self.repetitions} repetitions")
-        block_width = self.minimal_block_width  # base width determined by rate
-        total_width = block_width * self.repetitions
-        self.setFixedWidth(total_width)
+    def get_config(self):
+        arp = self.arp_widget.arp
+        return {
+            "velocity": arp.velocity,
+            "rate": arp.rate,
+            "note_length": arp.note_length,
+            "ground_note": arp.ground_note,
+            "mode": arp.mode,
+            "mute": arp.mute,
+            "variants_active": arp.variants_active,
+            "variants": arp.variants
+        }
+    
+    def duplicate_block(self):
+        if self.parent:
+            config = self.get_config()
+            self.parent.duplicate_arp_block(self, config)
+    
+    def update_size(self, arp_width):
+        self.setFixedWidth(arp_width)
+        self.arp_widget.setFixedWidth(arp_width)
 
     def get_arpeggio(self, bpm, instrument) -> tuple[list[mido.Message], int]:
-        """Get mido note list for this arpeggiator with repetitions"""
-        # Get the base arpeggio
-        all_notes = []
-        total_time = 0
-        for i in range(self.repetitions):
-            base_arpeggio, base_time = self.arp_widget.arp.get_arpeggio(bpm, instrument)
-            all_notes.extend(base_arpeggio)
-            total_time += base_time
-
-        return all_notes, total_time
+        return self.arp_widget.arp.get_arpeggio(bpm, instrument)
     
     def get_play_time(self, bpm) -> float:
-        """Get the play time for this arpeggiator block (with repetitions)"""
+        """Get the play time for this arpeggiator block"""
         # e.g.: If rate=2 => half the time
-        total_time = (1 / self.arp_widget.arp.rate) * (60 / bpm) * self.repetitions
+        total_time = (1 / self.arp_widget.arp.rate) * (60 / bpm)
         return total_time
 
     def move_left(self):
@@ -180,37 +199,45 @@ class ArpeggiatorBlockWidget(QWidget):
 
     def remove_block(self):
         if self.parent:
-            self.parent.remove_arp_block(self)
+            self.parent.remove_block(self)
 
 
 class ArpeggiatorWidget(QWidget):
     play_time_changed = Signal()
 
-    def __init__(self, parent=None, velocity=64, volume_line_signal=None):
+    def __init__(
+        self,
+        parent=None,
+        velocity=64,
+        rate=1.0,  # BPM multiplier
+        note_length=0.2,
+        ground_note=60,  # Midi C4
+        mode=Mode.UP,
+        mute=False,
+        variants_active=None,
+        variants=None,
+        volume_line_signal=None
+    ):
+        if variants_active is None:
+            variants_active = [False, False, False]
+        if variants is None:
+            variants = [0, 0, 0]
+
         super().__init__(parent)
         self.parent = parent
-        # Arp functionality
-        default_rate = 1.  # BPM multiplier
-        default_note_len = 0.2
-        default_ground_note = 60  # Midi C4
-        default_mode = Mode.UP
-        default_mute = False
-        default_volume = velocity
-        default_variants_active = [False, False, False]
-        default_variants = [0, 0, 0]
 
         if volume_line_signal:
             volume_line_signal.connect(volume_line_signal)
 
         self.arp = Arpeggiator(
-            default_rate,
-            default_note_len,
-            default_ground_note,
-            default_mode,
-            default_mute,
-            default_volume,
-            default_variants_active,
-            default_variants
+            rate,
+            note_length,
+            ground_note,
+            mode,
+            mute,
+            velocity,
+            variants_active,
+            variants
         )
         
         # Layout
@@ -219,7 +246,7 @@ class ArpeggiatorWidget(QWidget):
 
         ## Mute box
         self.mute_checkbox = QCheckBox("Mute")
-        self.mute_checkbox.setChecked(False)
+        self.mute_checkbox.setChecked(mute)
         self.mute_checkbox.stateChanged.connect(self.on_mute_changed)
         form_layout.addRow(self.mute_checkbox)
         # ==================== 1) Rate (x BPM) [Discrete: 0.5, 1, 2, 4, 8, 16, 32, 64] ====================
@@ -227,13 +254,13 @@ class ArpeggiatorWidget(QWidget):
 
         self.rate_slider = QSlider(Qt.Orientation.Horizontal)
         self.rate_slider.setRange(0, len(self.rate_values) - 1)
-        self.rate_slider.setValue(self.rate_values.index(default_rate))  # default to '1.0'
+        self.rate_slider.setValue(self.rate_values.index(rate))  # default to '1.0'
 
         self.rate_spin = QDoubleSpinBox()
         self.rate_spin.setRange(min(self.rate_values), max(self.rate_values))
         self.rate_spin.setDecimals(2)
         self.rate_spin.setSingleStep(0.5)
-        self.rate_spin.setValue(default_rate)
+        self.rate_spin.setValue(rate)
 
         row_layout_rate = QHBoxLayout()
         row_layout_rate.addWidget(self.rate_slider)
@@ -246,13 +273,13 @@ class ArpeggiatorWidget(QWidget):
         # ==================== 2) Note Length [0..1, step=0.1] ====================
         self.note_length_slider = QSlider(Qt.Orientation.Horizontal)
         self.note_length_slider.setRange(0, 10)  # each step => 0.1
-        self.note_length_slider.setValue(default_note_len * 10)      # default = 0.5
+        self.note_length_slider.setValue(note_length * 10)      # set default value (e.g. 0.2)
 
         self.note_length_spin = QDoubleSpinBox()
         self.note_length_spin.setRange(0.0, 1.0)
         self.note_length_spin.setDecimals(1)
         self.note_length_spin.setSingleStep(0.1)
-        self.note_length_spin.setValue(default_note_len)
+        self.note_length_spin.setValue(note_length)
 
         row_layout_note_length = QHBoxLayout()
         row_layout_note_length.addWidget(self.note_length_slider)
@@ -265,13 +292,13 @@ class ArpeggiatorWidget(QWidget):
         # ==================== 3) Ground Note [C3 (48) to C5 (72)] ====================
         self.ground_note_slider = QSlider(Qt.Orientation.Horizontal)
         self.ground_note_slider.setRange(48, 72)  # C3 to C5
-        self.ground_note_slider.setValue(default_ground_note)
+        self.ground_note_slider.setValue(ground_note)
 
         self.ground_note_spin = QSpinBox()
         self.ground_note_spin.setRange(48, 72)
-        self.ground_note_spin.setValue(default_ground_note)
+        self.ground_note_spin.setValue(ground_note)
 
-        self.ground_note_label = QLabel(f"Ground note {self.midi_to_note_name(default_ground_note)}:")
+        self.ground_note_label = QLabel(f"Ground note {self.midi_to_note_name(ground_note)}:")
 
         row_layout_ground_note = QHBoxLayout()
         row_layout_ground_note.addWidget(self.ground_note_slider)
@@ -303,9 +330,9 @@ class ArpeggiatorWidget(QWidget):
         self.mode_button_group.addButton(self.btn_random)
 
         # Set default selection
-        self.btn_up.setChecked(default_mode == Mode.UP)
-        self.btn_down.setChecked(default_mode == Mode.DOWN)
-        self.btn_random.setChecked(default_mode == Mode.RANDOM)
+        self.btn_up.setChecked(mode == Mode.UP)
+        self.btn_down.setChecked(mode == Mode.DOWN)
+        self.btn_random.setChecked(mode == Mode.RANDOM)
 
         # Add them horizontally
         self.mode_layout.addWidget(self.btn_up)
@@ -325,20 +352,20 @@ class ArpeggiatorWidget(QWidget):
 
         self.variant1_button = QPushButton("Variant 1")
         self.variant1_button.setCheckable(True)
-        self.variant1_button.setChecked(default_variants_active[0])  # default on
-        self.update_button_color(self.variant1_button, default_variants_active[0])
+        self.variant1_button.setChecked(variants_active[0])  # default on
+        self.update_button_color(self.variant1_button, variants_active[0])
         self.variant1_button.toggled.connect(lambda checked: self.on_variant1_button_toggled(checked))
 
         self.variant2_button = QPushButton("Variant 2")
         self.variant2_button.setCheckable(True)
-        self.variant2_button.setChecked(default_variants_active[1])  # default off
-        self.update_button_color(self.variant2_button, default_variants_active[1])
+        self.variant2_button.setChecked(variants_active[1])  # default off
+        self.update_button_color(self.variant2_button, variants_active[1])
         self.variant2_button.toggled.connect(lambda checked: self.on_variant2_button_toggled(checked))
 
         self.variant3_button = QPushButton("Variant 3")
         self.variant3_button.setCheckable(True)
-        self.variant3_button.setChecked(default_variants_active[2])  # default off
-        self.update_button_color(self.variant3_button, default_variants_active[2])
+        self.variant3_button.setChecked(variants_active[2])  # default off
+        self.update_button_color(self.variant3_button, variants_active[2])
         self.variant3_button.toggled.connect(lambda checked: self.on_variant3_button_toggled(checked))
 
         activation_layout.addWidget(self.variant1_button)
@@ -350,11 +377,11 @@ class ArpeggiatorWidget(QWidget):
         # ==================== Variant Offsets: -24..24, integer steps ====================
         self.variant1_slider = QSlider(Qt.Orientation.Horizontal)
         self.variant1_slider.setRange(-24, 24)
-        self.variant1_slider.setValue(default_variants[0])
+        self.variant1_slider.setValue(variants[0])
 
         self.variant1_spin = QSpinBox()
         self.variant1_spin.setRange(-24, 24)
-        self.variant1_spin.setValue(default_variants[0])
+        self.variant1_spin.setValue(variants[0])
 
         row_layout_variant1 = QHBoxLayout()
         row_layout_variant1.addWidget(self.variant1_slider)
@@ -366,11 +393,11 @@ class ArpeggiatorWidget(QWidget):
 
         self.variant2_slider = QSlider(Qt.Orientation.Horizontal)
         self.variant2_slider.setRange(-24, 24)
-        self.variant2_slider.setValue(default_variants[1])
+        self.variant2_slider.setValue(variants[1])
 
         self.variant2_spin = QSpinBox()
         self.variant2_spin.setRange(-24, 24)
-        self.variant2_spin.setValue(default_variants[1])
+        self.variant2_spin.setValue(variants[1])
 
         row_layout_variant2 = QHBoxLayout()
         row_layout_variant2.addWidget(self.variant2_slider)
@@ -382,11 +409,11 @@ class ArpeggiatorWidget(QWidget):
 
         self.variant3_slider = QSlider(Qt.Orientation.Horizontal)
         self.variant3_slider.setRange(-24, 24)
-        self.variant3_slider.setValue(default_variants[2])
+        self.variant3_slider.setValue(variants[2])
 
         self.variant3_spin = QSpinBox()
         self.variant3_spin.setRange(-24, 24)
-        self.variant3_spin.setValue(default_variants[2])
+        self.variant3_spin.setValue(variants[2])
 
         row_layout_variant3 = QHBoxLayout()
         row_layout_variant3.addWidget(self.variant3_slider)
@@ -442,10 +469,9 @@ class ArpeggiatorWidget(QWidget):
     # ---------------------------------------------------------------------------------------
     # Mute changed
     # ---------------------------------------------------------------------------------------
-    def on_mute_changed(self, state: bool):
-        self.mute_checkbox.blockSignals(True)
-        self.arp.mute = state
-        self.mute_checkbox.blockSignals(False)
+    def on_mute_changed(self, state: int):
+        checked = state == 2  # Qt.Checked
+        self.arp.mute = checked
         
     def change_arp_volume(self):
         self.arp.velocity = self.parent.velocity

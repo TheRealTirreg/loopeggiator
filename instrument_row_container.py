@@ -76,13 +76,6 @@ class InstrumentRowContainer(QWidget):
     def get_play_time(self, bpm):
         return sum(block.get_play_time(bpm) for block in self.arp_panel.arp_blocks)
 
-    def get_next_arpeggio(self, bpm):
-        arp_id = self.arp_panel.arp_queue[self.arp_panel.arp_queue_idx]
-        arpeggio, time = self.arp_panel.arp_blocks[arp_id].get_arpeggio(bpm, self.instrument)
-
-        self.arp_panel.arp_queue_idx = (self.arp_panel.arp_queue_idx + 1) % len(self.arp_panel.arp_queue)
-        return arpeggio, time
-
     def get_all_arpeggios(self, bpm):
         all_notes = []
         total_time = 0

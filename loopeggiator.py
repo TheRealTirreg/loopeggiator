@@ -35,7 +35,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
 
         # ==================== Base Window Setup =====================
         super().__init__()
-        self.setWindowTitle("Loop Arpeggiator")
+        self.setWindowTitle("Arpeggiator Loop Station")
         self.resize(1200, 600)
 
         # ============================================================
