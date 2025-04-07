@@ -13,6 +13,11 @@ A simple arpeggiator in python.
 - [ ] Adjust front end so it shows where we are on the beat atm
 - [ ] Report
 - [x] Move arps left and right
+- [x] Duplicate
+
+## Bugs
+
+- [ ] Volume
 
 ### Optional
 
