@@ -1,4 +1,4 @@
-import json
+# top_bar.py
 import os
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSpinBox, QStyle, QLabel, QFileDialog, QMainWindow
 from PySide6.QtCore import Qt, QSize, Signal

@@ -1,3 +1,4 @@
+# instrument_arp_row.py
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton
 from arp_widget import ArpeggiatorBlockWidget
 from PySide6.QtCore import Signal
@@ -48,9 +49,13 @@ class InstrumentArpPanel(QWidget):
         self.play_time_changed.emit()
 
     def set_block_width(self, max_rate):
+        print(f"Set block width: {max_rate} max rate")
+        print(f"Doing this for {len(self.arp_blocks)} blocks")
         min_block_width = ArpeggiatorBlockWidget.minimal_block_width
         for block in self.arp_blocks:
-            block.setFixedWidth(min_block_width * (max_rate / block.rate))
+            arp_width = min_block_width * (max_rate / block.rate)
+            block.arp_widget.setFixedWidth(arp_width)
+            block.update_size()  # <-- reapply total width (loop-based)
 
     def _rebuild_layout(self):
         # Remove all widgets

@@ -1,6 +1,6 @@
+# instrument_row_container.py
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QScrollArea, QSizePolicy
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QWheelEvent
 from instrument_settings_widget import InstrumentSettingsPanel
 from instrument_arp_row import InstrumentArpPanel
 

@@ -1,3 +1,4 @@
+# instrument_widget.py
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,

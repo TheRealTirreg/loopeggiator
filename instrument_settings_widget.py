@@ -1,5 +1,6 @@
+# instrument_settings_widget.py
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QSlider, QCheckBox, QComboBox, QPushButton, QHBoxLayout
+    QWidget, QVBoxLayout, QLabel, QSlider, QCheckBox, QComboBox, QPushButton
 )
 from PySide6.QtCore import Qt
 

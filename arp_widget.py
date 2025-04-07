@@ -1,5 +1,5 @@
+# arp_widget.py
 import sys
-import numpy as np
 import mido
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
@@ -56,8 +56,12 @@ class ArpeggiatorBlockWidget(QWidget):
         frame = QFrame()
         frame.setFrameShape(QFrame.Shape.StyledPanel)
         frame.setFrameShadow(QFrame.Shadow.Raised)
-        # Also prefer minimal sizing
-        frame.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
+        
+        # Outer frame that wraps everything
+        frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
+
+        # Align the frame to the left inside the block
+        outer_layout.setAlignment(frame, Qt.AlignmentFlag.AlignLeft)
 
         # Put content into the frame's layout
         frame_layout = QVBoxLayout(frame)
@@ -100,11 +104,8 @@ class ArpeggiatorBlockWidget(QWidget):
         loop_layout.addWidget(self.move_right_button)
         loop_layout.addWidget(self.delete_button)
     
-        # The ArpeggiatorWidget with an optional fixed or min size
         self.arp_widget = ArpeggiatorWidget(parent=self, velocity=velocity, volume_line_signal=volume_line_signal)
-        # If you want a strict fixed size, uncomment:
         # self.arp_widget.setFixedSize(QSize(300, 220))
-        # Or if you want it to be just enough for the controls:
         self.arp_widget.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
 
         # Add subwidgets to frame layout
@@ -118,8 +119,11 @@ class ArpeggiatorBlockWidget(QWidget):
         self.loop_spin.valueChanged.connect(self._on_repetitions_changed)
         self.arp_widget.play_time_changed.connect(self._on_arp_widget_changed)
 
+        self.update_size()
+
     def _on_repetitions_changed(self):
         """Update the loop count"""
+        self.update_size()
         self.play_time_changed.emit()  # Emit signal to update total play time
 
     def _on_arp_widget_changed(self):
@@ -140,6 +144,13 @@ class ArpeggiatorBlockWidget(QWidget):
         """Set the total loop count"""
         self.loop_spin.setValue(value)
         self.repetitions = value
+
+    def update_size(self):
+        """Scale the widget's width based on loop count."""
+        print(f"Update size: {self.repetitions} repetitions")
+        block_width = self.minimal_block_width  # base width determined by rate
+        total_width = block_width * self.repetitions
+        self.setFixedWidth(total_width)
 
     def get_arpeggio(self, bpm, instrument) -> tuple[list[mido.Message], int]:
         """Get mido note list for this arpeggiator with repetitions"""

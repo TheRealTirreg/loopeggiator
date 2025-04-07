@@ -1,3 +1,4 @@
+# synthplayer.py
 import os_check  # Ensures this script also works on Windows
 import time
 import fluidsynth

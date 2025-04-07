@@ -1,3 +1,4 @@
+# playback_thread.py
 from PySide6.QtCore import QThread
 
 
