@@ -17,10 +17,11 @@ A simple arpeggiator in python.
 
 ## Bugs
 
-- [ ] Volume
+- [x] Volume
 
 ### Optional
 
+- [ ] Change soundfont?
 - [ ] Limit to max_rows rows (16)
 - [ ] Arp volume?
 - [ ] Vertical scrolling, scrolling in general

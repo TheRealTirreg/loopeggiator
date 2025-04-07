@@ -235,7 +235,7 @@ class ArpeggiatorWidget(QWidget):
         self.parent = parent
 
         if volume_line_signal:
-            volume_line_signal.connect(volume_line_signal)
+            volume_line_signal.connect(self.change_arp_volume)
 
         self.arp = Arpeggiator(
             rate,
