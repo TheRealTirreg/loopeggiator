@@ -214,7 +214,6 @@ class ArpeggiatorBlockWidget(QWidget):
 
     @Slot()
     def flash(self):
-        print(f"Flash block {self.id} (called)")
         try:
             effect = QGraphicsDropShadowEffect(self)
             effect.setBlurRadius(20)
@@ -227,9 +226,6 @@ class ArpeggiatorBlockWidget(QWidget):
 
     def clear_flash(self):
         self.frame.setGraphicsEffect(None)
-
-    def __del__(self):  # Sometimes the destructor is called???
-        print(f"[GC] ArpeggiatorBlockWidget {self.id} destroyed")
 
 
 class ArpeggiatorWidget(QWidget):
