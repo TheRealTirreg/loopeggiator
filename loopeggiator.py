@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QStyle
 )
-from PySide6.QtCore import Qt, QCoreApplication, QMetaObject
+from PySide6.QtCore import Qt, QMetaObject
 
 import os_check  # Ensures this script also works on Windows
 from instrument_row_container import InstrumentRowContainer
@@ -78,6 +78,8 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.container)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
         # Add the scroll area to main_layout
         self.main_layout.addWidget(scroll_area)

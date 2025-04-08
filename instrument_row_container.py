@@ -30,17 +30,10 @@ class InstrumentRowContainer(QWidget):
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         self.setMinimumHeight(340)  # or whatever makes sense visually
 
-        # Scrollable ArpPanel only
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll_area.setWidget(self.arp_panel)
-
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.settings_panel)
-        layout.addWidget(scroll_area, stretch=1)
+        layout.addWidget(self.arp_panel, stretch=1)
 
         self.change_instrument(self.settings_panel.instrument_combo.currentIndex())  # initial assignment
 
