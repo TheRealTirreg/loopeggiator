@@ -19,8 +19,10 @@ from PySide6.QtWidgets import (
     QSpacerItem,
     QStyle,
     QFrame,
+    QGraphicsDropShadowEffect
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer, Slot
+from PySide6.QtGui import QColor
 from arp import Arpeggiator, Mode
 
 
@@ -60,7 +62,7 @@ class ArpeggiatorBlockWidget(QWidget):
 
         self.id = id
         self.velocity = velocity
-        self.parent = parent
+        self._parent = parent
 
         # ========================= Layout Setup =========================
         super().__init__(parent)
@@ -73,18 +75,19 @@ class ArpeggiatorBlockWidget(QWidget):
         outer_layout.setContentsMargins(0, 0, 0, 0)
 
         # Frame so we get a box around each arpeggiator
-        frame = QFrame()
-        frame.setFrameShape(QFrame.Shape.StyledPanel)
-        frame.setFrameShadow(QFrame.Shadow.Raised)
+        self.frame = QFrame()
+        self.frame.setObjectName("arp_frame")
+        self.frame.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame.setFrameShadow(QFrame.Shadow.Raised)
         
         # Outer frame that wraps everything
-        frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
+        self.frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
 
         # Align the frame to the left inside the block
-        outer_layout.setAlignment(frame, Qt.AlignmentFlag.AlignLeft)
+        outer_layout.setAlignment(self.frame, Qt.AlignmentFlag.AlignLeft)
 
         # Put content into the frame's layout
-        frame_layout = QVBoxLayout(frame)
+        frame_layout = QVBoxLayout(self.frame)
         frame_layout.setContentsMargins(5, 5, 5, 5)
 
         # Top row for buttons
@@ -149,7 +152,7 @@ class ArpeggiatorBlockWidget(QWidget):
         frame_layout.addWidget(self.arp_widget)
 
         # Finally, put the frame in the outer layout
-        outer_layout.addWidget(frame)
+        outer_layout.addWidget(self.frame)
 
         # Connect signals
         self.arp_widget.play_time_changed.connect(self._on_arp_widget_changed)
@@ -177,16 +180,19 @@ class ArpeggiatorBlockWidget(QWidget):
         }
     
     def duplicate_block(self):
-        if self.parent:
+        if self._parent:
             config = self.get_config()
-            self.parent.duplicate_arp_block(self, config)
+            self._parent.duplicate_arp_block(self, config)
     
     def update_size(self, arp_width):
         self.setFixedWidth(arp_width)
         self.arp_widget.setFixedWidth(arp_width)
 
     def get_arpeggio(self, bpm, instrument) -> tuple[list[mido.Message], int]:
-        return self.arp_widget.arp.get_arpeggio(bpm, instrument)
+        notes, duration = self.arp_widget.arp.get_arpeggio(bpm, instrument)
+        block_id = f"{self._parent.row_container.id}#{self.id}"
+        marker = mido.MetaMessage("marker", text=block_id, time=0)
+        return [marker] + notes, duration
     
     def get_play_time(self, bpm) -> float:
         """Get the play time for this arpeggiator block"""
@@ -195,16 +201,35 @@ class ArpeggiatorBlockWidget(QWidget):
         return total_time
 
     def move_left(self):
-        if self.parent:
-            self.parent.move_block_left(self)
+        if self._parent:
+            self._parent.move_block_left(self)
 
     def move_right(self):
-        if self.parent:
-            self.parent.move_block_right(self)
+        if self._parent:
+            self._parent.move_block_right(self)
 
     def remove_block(self):
-        if self.parent:
-            self.parent.remove_block(self)
+        if self._parent:
+            self._parent.remove_block(self)
+
+    @Slot()
+    def flash(self):
+        print(f"Flash block {self.id} (called)")
+        try:
+            effect = QGraphicsDropShadowEffect(self)
+            effect.setBlurRadius(20)
+            effect.setOffset(0)
+            effect.setColor(QColor("#E50046"))
+            self.frame.setGraphicsEffect(effect)
+            QTimer.singleShot(100, self.clear_flash)
+        except Exception as e:
+            print(f"Failed during flash: {e}")
+
+    def clear_flash(self):
+        self.frame.setGraphicsEffect(None)
+
+    def __del__(self):  # Sometimes the destructor is called???
+        print(f"[GC] ArpeggiatorBlockWidget {self.id} destroyed")
 
 
 class ArpeggiatorWidget(QWidget):
@@ -232,7 +257,7 @@ class ArpeggiatorWidget(QWidget):
             variants = [0, 0, 0]
 
         super().__init__(parent)
-        self.parent = parent
+        self._parent = parent
 
         if volume_line_signal:
             volume_line_signal.connect(self.change_arp_volume)
@@ -519,7 +544,7 @@ class ArpeggiatorWidget(QWidget):
         self.arp.mute = checked
         
     def change_arp_volume(self):
-        self.arp.velocity = self.parent.velocity
+        self.arp.velocity = self._parent.velocity
 
     # ---------------------------------------------------------------------------------------
     # NOTE LENGTH

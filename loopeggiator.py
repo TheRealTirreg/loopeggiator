@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QStyle
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QCoreApplication, QMetaObject
 
 import os_check  # Ensures this script also works on Windows
 from instrument_row_container import InstrumentRowContainer
@@ -32,6 +32,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
     def __init__(self, soundfont_path):
         # ===================== Functionality ========================
         self.synth = SynthPlayer(soundfont_path, max_rows=16)
+        self.synth.on_marker = self.highlight_block
 
         # ==================== Base Window Setup =====================
         super().__init__()
@@ -187,6 +188,15 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         max_time = max(times) if times else 0
 
         self.top_bar.set_loop_length(max_time)
+
+    def highlight_block(self, block_id: str):
+        try:  # Expected format: "row#block"
+            row_idx, block_idx = map(int, block_id.split("#"))
+            row = self.instrument_rows[row_idx]
+            block = row.arp_blocks[block_idx]
+            QMetaObject.invokeMethod(block, "flash", Qt.QueuedConnection)  # Queued because this is called from synthplayer thread
+        except Exception as e:
+            print(f"Failed to highlight block {block_id}: {e}")
 
 
 def main():

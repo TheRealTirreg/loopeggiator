@@ -30,7 +30,7 @@ class InstrumentRowWidget(QWidget):
     def __init__(self, synth, instrument_row_id, parent=None):
         # ========================= Layout Setup =========================
         super().__init__(parent)
-        self.parent = parent
+        self._parent = parent
         # This row should also shrink to fit, not fill horizontally.
         self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum))
 
@@ -194,8 +194,8 @@ class InstrumentRowWidget(QWidget):
             self.play_time_changed.emit()
 
     def del_instrument(self):
-        if self.parent:
-            self.parent.del_instrument(self)
+        if self._parent:
+            self._parent.del_instrument(self)
     def _on_block_changed(self):
         self.play_time_changed.emit()
     

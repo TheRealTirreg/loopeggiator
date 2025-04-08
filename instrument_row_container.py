@@ -12,7 +12,7 @@ class InstrumentRowContainer(QWidget):
     def __init__(self, synth, row_id, parent=None):
         super().__init__(parent)
 
-        self.parent = parent
+        self._parent = parent
         self.synth = synth
         self.id = row_id
         self.instrument = 0
@@ -57,8 +57,8 @@ class InstrumentRowContainer(QWidget):
         return self.settings_panel.mute_checkbox
 
     def del_instrument(self):
-        if self.parent:
-            self.parent.del_instrument(self)
+        if self._parent:
+            self._parent.del_instrument(self)
 
     def _on_block_changed(self):
         self.play_time_changed.emit()

@@ -1,6 +1,7 @@
 # synthplayer.py
 import os_check  # Ensures this script also works on Windows
 import time
+import mido
 import fluidsynth
 
 
@@ -12,6 +13,7 @@ class SynthPlayer:
         self.sfid = self.fs.sfload(soundfont_path)  # Charger la soundfont
         for ch in range(self.max_rows):
             self.fs.program_select(ch, self.sfid, 0, 0)
+        self.on_marker = None  # Will be set by UI
 
     def change_instrument(self, channel, instrument, bank=0):
         print(f"Change instrument on channel {channel} to {instrument}")
@@ -29,6 +31,7 @@ class SynthPlayer:
         `msg.time` is as a delta-time (seconds since the last event)!
         The track index => channel #.
         """
+        current_block_ids = {}  # {channel: block_id}
         all_events = []
         for channel, track in enumerate(tracks):
             abs_time = 0.0
@@ -54,6 +57,9 @@ class SynthPlayer:
             elif msg.type == 'note_on':
                 velocity = max(0, min(msg.velocity, 127))  # clip velocity
                 self.fs.noteon(channel, msg.note, velocity)
+            elif isinstance(msg, mido.MetaMessage) and msg.type == "marker":
+                if self.on_marker:
+                    self.on_marker(msg.text)  # Send block id like '2#0' to make ui flash
             elif msg.type == 'note_off':
                 self.fs.noteoff(channel, msg.note)
             else:
