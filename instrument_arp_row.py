@@ -1,8 +1,8 @@
 # instrument_arp_row.py
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSizePolicy
-from arp_widget import ArpeggiatorBlockWidget
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSizePolicy, QScrollArea
+from PySide6.QtCore import Qt, Signal, QTimer
 
+from arp_widget import ArpeggiatorBlockWidget
 from arp import Mode
 
 class InstrumentArpPanel(QWidget):
@@ -72,6 +72,8 @@ class InstrumentArpPanel(QWidget):
         block.play_time_changed.connect(self._on_block_changed)
         self.play_time_changed.emit()
 
+        self.scroll_plus_button_into_view()
+
     def duplicate_arp_block(self, block, config):
         idx = self.arp_blocks.index(block)
         self.layout.removeWidget(self.btn_add)
@@ -89,6 +91,8 @@ class InstrumentArpPanel(QWidget):
         
         new_block.play_time_changed.connect(self._on_block_changed)
         self.play_time_changed.emit()
+        
+        self.scroll_plus_button_into_view()
 
     def set_block_width(self, max_rate):
         min_block_width = ArpeggiatorBlockWidget.minimal_block_width
@@ -137,3 +141,16 @@ class InstrumentArpPanel(QWidget):
                 blk.id = i
 
             self.play_time_changed.emit()
+
+    def scroll_plus_button_into_view(self):
+        scroll_area = self.find_parent_scroll_area()
+        if scroll_area:
+            QTimer.singleShot(10, lambda: scroll_area.ensureWidgetVisible(self.btn_add, xmargin=20, ymargin=0))
+
+    def find_parent_scroll_area(self):
+        parent = self.parent()
+        while parent:
+            if isinstance(parent, QScrollArea):
+                return parent
+            parent = parent.parent()
+        return None
