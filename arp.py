@@ -45,23 +45,29 @@ class Arpeggiator():
         track = [
             mido.Message('program_change', program=instrument, time=0)  # Set instrument
         ]
-        
+        major_scale = [0, 2, 4, 5, 7, 9, 11, 12]       # C D E F G A B C
+        minor_scale = [0, 2, 3, 5, 7, 8, 10, 12]       # C D Eb F G Ab Bb C
+        pentatonic_scale = [0, 2, 4, 7, 9, 12]         # C D E G A C
+
         # Determine the notes to play
         notes = [self.ground_note]
         for i, offset in enumerate(self.variants):
             if self.variants_active[i]:
                 notes.append(self.ground_note + offset)
 
-        """
-        if self.chords_active[0]:
-            pass
+        
+        
 
-        if self.chords_active[1]:
-            pass     
+        # Chord modes override variants if active
+        if self.chords_active[0]:  # Major
+            notes = [self.ground_note + i for i in major_scale[:4]]
+        elif self.chords_active[1]:  # Minor
+            notes = [self.ground_note + i for i in minor_scale[:4]]
+        elif self.chords_active[2]:  # Pentatonic
+            notes = [self.ground_note + i for i in pentatonic_scale[:4]]
+        
 
-        if self.chords_active[2]:
-            pass
-        """
+
         if self.mode == Mode.UP:
             notes.sort()
         elif self.mode == Mode.DOWN:
