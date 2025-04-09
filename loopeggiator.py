@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QStyle
 )
-from PySide6.QtCore import Qt, QMetaObject
+from PySide6.QtCore import Qt, QMetaObject, QTimer
 
 import os_check  # Ensures this script also works on Windows
 from instrument_row_container import InstrumentRowContainer
@@ -76,14 +76,14 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         self.vlayout.addWidget(self.btn_add_instrument, alignment=Qt.AlignmentFlag.AlignLeft)
 
         # Put the container inside a single QScrollArea
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.container)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setWidget(self.container)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
         # Add the scroll area to main_layout
-        self.main_layout.addWidget(scroll_area)
+        self.main_layout.addWidget(self.scroll_area)
 
         # Finally, set main_widget as the central widget
         self.setCentralWidget(main_widget)
@@ -150,6 +150,9 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         self.vlayout.insertWidget(index_for_button, row)
         row.play_time_changed.connect(self._on_play_time_changed)  # Connect to signal
         self._on_play_time_changed()
+
+        QTimer.singleShot(10, lambda: self.scroll_area.verticalScrollBar().setValue(
+            self.scroll_area.verticalScrollBar().maximum()))  # Scroll to the bottom
         return row
 
     def del_instrument(self, instrument):
