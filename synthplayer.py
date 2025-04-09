@@ -1,8 +1,10 @@
 # synthplayer.py
 import os_check  # Ensures this script also works on Windows
+import os
 import time
 import mido
 import fluidsynth
+from PySide6.QtWidgets import QFileDialog
 
 
 class SynthPlayer:
@@ -31,7 +33,6 @@ class SynthPlayer:
         `msg.time` is as a delta-time (seconds since the last event)!
         The track index => channel #.
         """
-        current_block_ids = {}  # {channel: block_id}
         all_events = []
         for channel, track in enumerate(tracks):
             abs_time = 0.0
@@ -77,6 +78,34 @@ class SynthPlayer:
     def close(self):
         """Properly clean up fluidsynth resources"""
         self.fs.delete()
+
+    def load_soundfont(self, path):
+        """Try to load a soundfont. If it fails, prompt the user to select a valid one."""
+        while True:
+            try:
+                new_sfid = self.fs.sfload(path)
+                for ch in range(self.max_rows):
+                    self.fs.program_select(ch, new_sfid, 0, 0)
+                self.sfid = new_sfid
+                print(f"Loaded SoundFont: {path}")
+                return True
+            except Exception as e:
+                print(f"Failed to load SoundFont: {path}\n{e}")
+                path = self.ask_user_for_soundfont()
+                if not path:
+                    print("No SoundFont selected. Exiting.")
+                    return False  # Let caller handle exit logic
+
+    def ask_user_for_soundfont(self):
+        """Open a file dialog asking the user to select a valid SoundFont."""
+        default_dir = os.path.expanduser("~") if os_check.is_windows() else "/usr/share/sounds/sf2"
+        filename, _ = QFileDialog.getOpenFileName(
+            None,
+            "Select a valid SoundFont (.sf2)",
+            default_dir,
+            "SoundFont Files (*.sf2)"
+        )
+        return filename if filename else None
 
 
 if __name__ == "__main__":

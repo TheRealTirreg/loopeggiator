@@ -42,6 +42,13 @@ class TopBarWidget(QWidget):
         self.loop_length_label = QLabel("Loop Length: 0.60s")
         self.loop_length_label.setToolTip("The loop length is determined by the longest arpeggio chain")
 
+        # --- Load SoundFont button ---
+        self.font_button = QPushButton("🎵")
+        self.font_button.setToolTip("Change SoundFont (SF2)")
+        self.font_button.setFixedSize(26, 24)
+        self.font_button.clicked.connect(self.on_change_soundfont_clicked)
+        layout.addWidget(self.font_button)
+
         # --- Save & Load buttons (icon‐only) ---
         self.save_button = QPushButton()
         self.save_button.setIcon(self.style().standardIcon(QStyle.SP_DialogSaveButton))
@@ -64,6 +71,7 @@ class TopBarWidget(QWidget):
         layout.addWidget(self.loop_length_label)
         layout.addStretch(1)
 
+        layout.addWidget(self.font_button)
         layout.addWidget(self.save_button)
         layout.addWidget(self.load_button)
 
@@ -102,6 +110,20 @@ class TopBarWidget(QWidget):
                 return widget
             widget = widget.parent()
         return None
+    
+    def on_change_soundfont_clicked(self):
+        filename, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select SoundFont",
+            os.path.expanduser("~"),
+            "SoundFont Files (*.sf2)"
+        )
+        if filename:
+            mw = self.main_window()
+            if mw:
+                print(f"Attempting to load SoundFont: {filename}")
+                if not mw.synth.load_soundfont(filename):
+                    print("Critical: Unable to load any valid SoundFont.")
 
     def on_save_clicked(self):
         save_dir = os.path.join(os.path.dirname(__file__), "saves")

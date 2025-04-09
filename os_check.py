@@ -2,6 +2,11 @@ import os
 import platform
 from ctypes import CDLL
 
+
+def is_windows():
+    return platform.system() == "Windows"
+
+
 def load_fluidsynth_dll():
     if platform.system() == "Windows":
         # Add the Fluidsynth bin directory
@@ -22,6 +27,7 @@ def load_fluidsynth_dll():
             print(f"Loaded Fluidsynth DLL: {dll_path}")
         else:
             print(f"Fluidsynth DLL not found: {dll_path}")
+
 
 # Call the function to load Fluidsynth
 load_fluidsynth_dll()
