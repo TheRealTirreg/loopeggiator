@@ -1,7 +1,7 @@
 # instrument_arp_row.py
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSizePolicy
 from arp_widget import ArpeggiatorBlockWidget
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 
 from arp import Mode
 
@@ -14,11 +14,13 @@ class InstrumentArpPanel(QWidget):
 
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(5, 5, 5, 5)
+        self.layout.setAlignment(Qt.AlignLeft)
 
         self.arp_blocks = []
 
         self.btn_add = QPushButton("+")
         self.btn_add.setToolTip("Add arpeggiator block")
+        self.btn_add.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.btn_add.clicked.connect(self.add_block)  # TODO add args to add_block?
         self.layout.addWidget(self.btn_add)
 
