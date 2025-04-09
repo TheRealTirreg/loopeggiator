@@ -10,7 +10,7 @@ A simple arpeggiator in python.
 - [X] Remove Arp & Instrument row 
 - [X] Total volume
 - [ ] Effets de son
-- [ ] Adjust front end so it shows where we are on the beat atm
+- [x] Adjust front end so it shows where we are on the beat atm
 - [ ] Report
 - [x] Move arps left and right
 - [x] Duplicate

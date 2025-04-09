@@ -60,6 +60,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
         self.container = QWidget()
         self.vlayout = QVBoxLayout(self.container)
         self.vlayout.setContentsMargins(5, 5, 5, 5)
+        self.vlayout.setAlignment(Qt.AlignTop)
 
         # We'll keep a list of row widgets
         self.instrument_rows = []
