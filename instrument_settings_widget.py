@@ -1,8 +1,7 @@
 # instrument_settings_widget.py
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QSlider, QCheckBox, QComboBox, QPushButton
-)
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QCheckBox, QPushButton
 from PySide6.QtCore import Qt
+from no_scrolling import NoScrollSlider, NoScrollComboBox
 
 class InstrumentSettingsPanel(QWidget):
     def __init__(self, synth, row_id, parent=None):
@@ -18,14 +17,14 @@ class InstrumentSettingsPanel(QWidget):
         layout.addWidget(self.mute_checkbox)
 
         volume_label = QLabel("Volume:")
-        self.volume_slider = QSlider(Qt.Horizontal)
+        self.volume_slider = NoScrollSlider(Qt.Horizontal)
         self.volume_slider.setRange(0, 127)
         self.volume_slider.setValue(64)
         layout.addWidget(volume_label)
         layout.addWidget(self.volume_slider)
 
         layout.addWidget(QLabel("Instrument:"))
-        self.instrument_combo = QComboBox()
+        self.instrument_combo = NoScrollComboBox()
         self.instrument_combo.addItem("Piano", 0)
         self.instrument_combo.addItem("Guitare", 24)
         self.instrument_combo.addItem("Flûte", 73)

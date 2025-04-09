@@ -6,12 +6,9 @@ from PySide6.QtWidgets import (
     QApplication,
     QWidget,
     QFormLayout,
-    QSlider,
     QLabel,
     QVBoxLayout,
     QHBoxLayout,
-    QDoubleSpinBox,
-    QSpinBox,
     QPushButton,
     QButtonGroup,
     QSizePolicy,
@@ -24,6 +21,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer, Slot
 from PySide6.QtGui import QColor
 from arp import Arpeggiator, Mode
+from no_scrolling import NoScrollSlider, NoScrollSpinBox, NoScrollDoubleSpinBox
 
 
 class ArpeggiatorBlockWidget(QWidget):
@@ -282,11 +280,11 @@ class ArpeggiatorWidget(QWidget):
         # ==================== 1) Rate (x BPM) [Discrete: 0.5, 1, 2, 4, 8, 16, 32, 64] ====================
         self.rate_values = [0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]
 
-        self.rate_slider = QSlider(Qt.Orientation.Horizontal)
+        self.rate_slider = NoScrollSlider(Qt.Orientation.Horizontal)
         self.rate_slider.setRange(0, len(self.rate_values) - 1)
         self.rate_slider.setValue(self.rate_values.index(rate))  # default to '1.0'
 
-        self.rate_spin = QDoubleSpinBox()
+        self.rate_spin = NoScrollDoubleSpinBox()
         self.rate_spin.setRange(min(self.rate_values), max(self.rate_values))
         self.rate_spin.setDecimals(2)
         self.rate_spin.setSingleStep(0.5)
@@ -301,11 +299,11 @@ class ArpeggiatorWidget(QWidget):
         self.rate_spin.valueChanged.connect(self.on_rate_spin_changed)
         
         # ==================== 2) Note Length [0..1, step=0.1] ====================
-        self.note_length_slider = QSlider(Qt.Orientation.Horizontal)
+        self.note_length_slider = NoScrollSlider(Qt.Orientation.Horizontal)
         self.note_length_slider.setRange(0, 10)  # each step => 0.1
         self.note_length_slider.setValue(note_length * 10)      # set default value (e.g. 0.2)
 
-        self.note_length_spin = QDoubleSpinBox()
+        self.note_length_spin = NoScrollDoubleSpinBox()
         self.note_length_spin.setRange(0.0, 1.0)
         self.note_length_spin.setDecimals(1)
         self.note_length_spin.setSingleStep(0.1)
@@ -320,11 +318,11 @@ class ArpeggiatorWidget(QWidget):
         self.note_length_spin.valueChanged.connect(self.on_note_length_spin_changed)
 
         # ==================== 3) Ground Note [C3 (48) to C5 (72)] ====================
-        self.ground_note_slider = QSlider(Qt.Orientation.Horizontal)
+        self.ground_note_slider = NoScrollSlider(Qt.Orientation.Horizontal)
         self.ground_note_slider.setRange(48, 72)  # C3 to C5
         self.ground_note_slider.setValue(ground_note)
 
-        self.ground_note_spin = QSpinBox()
+        self.ground_note_spin = NoScrollSpinBox()
         self.ground_note_spin.setRange(48, 72)
         self.ground_note_spin.setValue(ground_note)
 
@@ -405,11 +403,11 @@ class ArpeggiatorWidget(QWidget):
         form_layout.addRow("Chords:", activation_layout)
 
         # ==================== Variant Offsets: -24..24, integer steps ====================
-        self.variant1_slider = QSlider(Qt.Orientation.Horizontal)
+        self.variant1_slider = NoScrollSlider(Qt.Orientation.Horizontal)
         self.variant1_slider.setRange(-24, 24)
         self.variant1_slider.setValue(variants[0])
 
-        self.variant1_spin = QSpinBox()
+        self.variant1_spin = NoScrollSpinBox()
         self.variant1_spin.setRange(-24, 24)
         self.variant1_spin.setValue(variants[0])
 
@@ -431,11 +429,11 @@ class ArpeggiatorWidget(QWidget):
         self.variant1_slider.valueChanged.connect(self.on_variant1_slider_changed)
         self.variant1_spin.valueChanged.connect(self.on_variant1_spin_changed)
 
-        self.variant2_slider = QSlider(Qt.Orientation.Horizontal)
+        self.variant2_slider = NoScrollSlider(Qt.Orientation.Horizontal)
         self.variant2_slider.setRange(-24, 24)
         self.variant2_slider.setValue(variants[1])
 
-        self.variant2_spin = QSpinBox()
+        self.variant2_spin = NoScrollSpinBox()
         self.variant2_spin.setRange(-24, 24)
         self.variant2_spin.setValue(variants[1])
 
@@ -458,14 +456,11 @@ class ArpeggiatorWidget(QWidget):
         self.variant2_slider.valueChanged.connect(self.on_variant2_slider_changed)
         self.variant2_spin.valueChanged.connect(self.on_variant2_spin_changed)
 
-
-
-
-        self.variant3_slider = QSlider(Qt.Orientation.Horizontal)
+        self.variant3_slider = NoScrollSlider(Qt.Orientation.Horizontal)
         self.variant3_slider.setRange(-24, 24)
         self.variant3_slider.setValue(variants[2])
 
-        self.variant3_spin = QSpinBox()
+        self.variant3_spin = NoScrollSpinBox()
         self.variant3_spin.setRange(-24, 24)
         self.variant3_spin.setValue(variants[2])
 
@@ -484,7 +479,6 @@ class ArpeggiatorWidget(QWidget):
         self.active3_checkbox.stateChanged.connect(lambda checked: self.on_variant3_button_toggled(checked))
 
         form_layout.addRow(label_widget, row_layout_variant3)
-        
 
         self.variant3_slider.valueChanged.connect(self.on_variant3_slider_changed)
         self.variant3_spin.valueChanged.connect(self.on_variant3_spin_changed)
