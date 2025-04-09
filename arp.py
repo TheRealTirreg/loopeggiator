@@ -57,7 +57,7 @@ class Arpeggiator():
 
         
         
-
+        """
         # Chord modes override variants if active
         if self.chords_active[0]:  # Major
             notes = [self.ground_note + i for i in major_scale[:4]]
@@ -65,7 +65,7 @@ class Arpeggiator():
             notes = [self.ground_note + i for i in minor_scale[:4]]
         elif self.chords_active[2]:  # Pentatonic
             notes = [self.ground_note + i for i in pentatonic_scale[:4]]
-        
+        """
 
 
         if self.mode == Mode.UP:

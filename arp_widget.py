@@ -376,31 +376,49 @@ class ArpeggiatorWidget(QWidget):
         self.btn_random.clicked.connect(self.on_mode_button_clicked)
 
         # ==================== ACTIVATION BUTTONS (Variants Active) ====================
-        activation_layout = QHBoxLayout()
+        self.variant_layout = QHBoxLayout()
 
-        self.variant1_button = QPushButton("major")
-        self.variant1_button.setCheckable(True)
-        self.variant1_button.setChecked(chords_active[0])  # default on
-        self.update_button_color(self.variant1_button, chords_active[0])
-        self.variant1_button.toggled.connect(lambda checked: self.on_major_button_toggled(checked))
+        # Create a button group for variants (non-exclusive, so user can toggle multiple)
+        self.variant_button_group = QButtonGroup(self)
+        self.variant_button_group.setExclusive(False)
 
-        self.variant2_button = QPushButton("minor")
-        self.variant2_button.setCheckable(True)
-        self.variant2_button.setChecked(chords_active[1])  # default off
-        self.update_button_color(self.variant2_button, chords_active[1])
-        self.variant2_button.toggled.connect(lambda checked: self.on_minor_button_toggled(checked))
+        # Create buttons
+        self.btn_major = QPushButton("major")
+        self.btn_minor = QPushButton("minor")
+        self.btn_penta = QPushButton("pentatonic")
 
-        self.variant3_button = QPushButton("pentatonic")
-        self.variant3_button.setCheckable(True)
-        self.variant3_button.setChecked(chords_active[2])  # default off
-        self.update_button_color(self.variant3_button, chords_active[2])
-        self.variant3_button.toggled.connect(lambda checked: self.on_penta_button_toggled(checked))
+        # Make them checkable
+        self.btn_major.setCheckable(True)
+        self.btn_minor.setCheckable(True)
+        self.btn_penta.setCheckable(True)
 
-        activation_layout.addWidget(self.variant1_button)
-        activation_layout.addWidget(self.variant2_button)
-        activation_layout.addWidget(self.variant3_button)
+        # Set initial checked states from chords_active
+        self.btn_major.setChecked(chords_active[0])
+        self.btn_minor.setChecked(chords_active[1])
+        self.btn_penta.setChecked(chords_active[2])
 
-        form_layout.addRow("Chords:", activation_layout)
+        # Add buttons to button group
+        self.variant_button_group.addButton(self.btn_major)
+        self.variant_button_group.addButton(self.btn_minor)
+        self.variant_button_group.addButton(self.btn_penta)
+
+        # Update button colors initially
+        self.update_button_color(self.btn_major, chords_active[0])
+        self.update_button_color(self.btn_minor, chords_active[1])
+        self.update_button_color(self.btn_penta, chords_active[2])
+
+        # Connect toggles to handlers
+        self.btn_major.toggled.connect(lambda checked: self.on_major_button_toggled(checked))
+        self.btn_minor.toggled.connect(lambda checked: self.on_minor_button_toggled(checked))
+        self.btn_penta.toggled.connect(lambda checked: self.on_penta_button_toggled(checked))
+
+        # Add buttons to layout
+        self.variant_layout.addWidget(self.btn_major)
+        self.variant_layout.addWidget(self.btn_minor)
+        self.variant_layout.addWidget(self.btn_penta)
+
+        # Add to form layout
+        form_layout.addRow("Chords:", self.variant_layout)
 
         # ==================== Variant Offsets: -24..24, integer steps ====================
         self.variant1_slider = NoScrollSlider(Qt.Orientation.Horizontal)
@@ -636,17 +654,54 @@ class ArpeggiatorWidget(QWidget):
      # ---------------------------------------------------------------------------------------
     # CHORDS 1, 2, 3 ACTIVATION
     # ---------------------------------------------------------------------------------------
+    major_scale = [2, 4, 5, 7, 9, 11, 12]       # C D E F G A B C
+    minor_scale = [2, 3, 5, 7, 8, 10, 12]       # C D Eb F G Ab Bb C
+    pentatonic_scale = [2, 4, 7, 9, 12]         # C D E G A C
+    
     def on_major_button_toggled(self, checked: bool):
-        self.arp.chords_active[0] = checked
-        self.update_button_color(self.variant1_button, checked)
+        self.handle_variant_toggle(index=0, checked=checked)
 
     def on_minor_button_toggled(self, checked: bool):
-        self.arp.chords_active[1] = checked
-        self.update_button_color(self.variant2_button, checked)
+        self.handle_variant_toggle(index=1, checked=checked)
 
     def on_penta_button_toggled(self, checked: bool):
-        self.arp.chords_active[2] = checked
-        self.update_button_color(self.variant3_button, checked)
+        self.handle_variant_toggle(index=2, checked=checked)
+
+    def handle_variant_toggle(self, index: int, checked: bool):
+        buttons = [self.btn_major, self.btn_minor, self.btn_penta]
+        sliders = [self.variant1_slider, self.variant2_slider, self.variant3_slider]
+        checkboxes = [self.active1_checkbox, self.active2_checkbox, self.active3_checkbox]
+        scales = [self.major_scale, self.minor_scale, self.pentatonic_scale]
+
+        if checked:
+            # Set this one active, others off
+            for i, btn in enumerate(buttons):
+                state = (i == index)
+                self.arp.chords_active[i] = state
+                btn.setChecked(state)
+                self.update_button_color(btn, state)
+
+            # Activate all checkboxes and variant flags
+            for i in range(3):
+                self.arp.variants_active[i] = True
+                checkboxes[i].setChecked(True)
+
+            # Set scale preset
+            for slider, val in zip(sliders, scales[index][:3]):
+                slider.setValue(val)
+
+        else:
+            # Turn this chord type off
+            self.arp.chords_active[index] = False
+            self.update_button_color(buttons[index], False)
+
+            # Check if all chord types are now off
+            if not any(self.arp.chords_active):
+                for i in range(3):
+                    self.arp.variants_active[i] = False
+                    checkboxes[i].setChecked(False)
+                    sliders[i].setValue(0)
+
 
     # ---------------------------------------------------------------------------------------
     # VARIANT 1, 2, 3 OFFSETS
