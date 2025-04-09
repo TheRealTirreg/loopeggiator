@@ -14,6 +14,7 @@ A simple arpeggiator in python.
 - [ ] Report
 - [x] Move arps left and right
 - [x] Duplicate
+- [ ] Variant option 0 to play a silent sound (pauses in arpeggios possible)
 
 ## Bugs
 
