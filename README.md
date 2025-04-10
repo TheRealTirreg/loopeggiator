@@ -33,6 +33,6 @@ See requirements.txt for needed packages for installation.
 - [ ] Small arp view (make width smaller)
 - [ ] Zoom?
 - [x] Change soundfont?
-- [ ] Limit to max_rows rows (16)
+- [x] Limit to max_rows rows (16)
 - [ ] Arp volume?
 - [x] Vertical scrolling, scrolling in general

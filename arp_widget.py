@@ -408,7 +408,7 @@ class ArpeggiatorWidget(QWidget):
         self.btn_down.clicked.connect(self.on_mode_button_clicked)
         self.btn_random.clicked.connect(self.on_mode_button_clicked)
 
-        # ==================== ACTIVATION BUTTONS (Variants Active) ====================
+        # ==================== CHORD SHORTCUT BUTTONS =====================
         self.variant_layout = QHBoxLayout()
 
         # Create a button group for variants (non-exclusive, so user can toggle multiple)
@@ -463,7 +463,7 @@ class ArpeggiatorWidget(QWidget):
 
         row_layout_variant1 = QHBoxLayout()
         self.active1_checkbox = QCheckBox()
-        self.active1_checkbox.setChecked(False)
+        self.active1_checkbox.setChecked(variants_active[0])
         label_layout = QHBoxLayout()
         label_layout.setContentsMargins(0, 0, 0, 0)  # Pas de marges inutiles
         label_layout.addWidget(QLabel("Variant 1:"))
@@ -473,7 +473,7 @@ class ArpeggiatorWidget(QWidget):
 
         row_layout_variant1.addWidget(self.variant1_slider)
         row_layout_variant1.addWidget(self.variant1_spin)
-        self.active1_checkbox.stateChanged.connect(lambda checked: self.on_variant1_button_toggled(checked))
+        self.active1_checkbox.stateChanged.connect(lambda checked: self.on_variant1_checkbox_toggled(checked))
 
         form_layout.addRow(label_widget, row_layout_variant1)
         self.variant1_slider.valueChanged.connect(self.on_variant1_slider_changed)
@@ -488,7 +488,7 @@ class ArpeggiatorWidget(QWidget):
 
         row_layout_variant2 = QHBoxLayout()
         self.active2_checkbox = QCheckBox()
-        self.active2_checkbox.setChecked(False)
+        self.active2_checkbox.setChecked(variants_active[1])
         label_layout = QHBoxLayout()
         label_layout.setContentsMargins(0, 0, 0, 0)  # Pas de marges inutiles
         label_layout.addWidget(QLabel("Variant 2:"))
@@ -498,7 +498,7 @@ class ArpeggiatorWidget(QWidget):
 
         row_layout_variant2.addWidget(self.variant2_slider)
         row_layout_variant2.addWidget(self.variant2_spin)
-        self.active2_checkbox.stateChanged.connect(lambda checked: self.on_variant2_button_toggled(checked))
+        self.active2_checkbox.stateChanged.connect(lambda checked: self.on_variant2_checkbox_toggled(checked))
 
         form_layout.addRow(label_widget, row_layout_variant2)
         
@@ -514,7 +514,7 @@ class ArpeggiatorWidget(QWidget):
 
         row_layout_variant3 = QHBoxLayout()
         self.active3_checkbox = QCheckBox()
-        self.active3_checkbox.setChecked(False)
+        self.active3_checkbox.setChecked(variants_active[2])
         label_layout = QHBoxLayout()
         label_layout.setContentsMargins(0, 0, 0, 0)  # Pas de marges inutiles
         label_layout.addWidget(QLabel("Variant 3:"))
@@ -524,7 +524,7 @@ class ArpeggiatorWidget(QWidget):
 
         row_layout_variant3.addWidget(self.variant3_slider)
         row_layout_variant3.addWidget(self.variant3_spin)
-        self.active3_checkbox.stateChanged.connect(lambda checked: self.on_variant3_button_toggled(checked))
+        self.active3_checkbox.stateChanged.connect(lambda checked: self.on_variant3_checkbox_toggled(checked))
 
         form_layout.addRow(label_widget, row_layout_variant3)
 
@@ -686,18 +686,18 @@ class ArpeggiatorWidget(QWidget):
     # ---------------------------------------------------------------------------------------
     # VARIANT 1, 2, 3 ACTIVATION
     # ---------------------------------------------------------------------------------------
-    def on_variant1_button_toggled(self, checked: bool):
+    def on_variant1_checkbox_toggled(self, checked: int):
+        checked = checked == 2  # Qt.Checked
         self.arp.variants_active[0] = checked
-        #self.update_button_color(self.variant1_button, checked)
+        print(f"Variant 1 active: {checked} with value {self.arp.variants[0]}")
 
-    def on_variant2_button_toggled(self, checked: bool):
+    def on_variant2_checkbox_toggled(self, checked: int):
+        checked = checked == 2  # Qt.Checked
         self.arp.variants_active[1] = checked
-        #self.update_button_color(self.variant2_button, checked)
 
-    def on_variant3_button_toggled(self, checked: bool):
+    def on_variant3_checkbox_toggled(self, checked: int):
+        checked = checked == 2  # Qt.Checked
         self.arp.variants_active[2] = checked
-        #self.update_button_color(self.variant3_button, checked)
-
 
     # ---------------------------------------------------------------------------------------
     # CHORDS 1, 2, 3 ACTIVATION
