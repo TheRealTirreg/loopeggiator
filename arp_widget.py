@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer, Slot
 from PySide6.QtGui import QColor
 from arp import Arpeggiator, Mode
-from no_scrolling import NoScrollSlider, NoScrollSpinBox, NoScrollDoubleSpinBox
+from custom_widgets import NoScrollSlider, NoScrollSpinBox, NoScrollDoubleSpinBox, MuteSpinBox, GroundNoteSpinBox
 
 
 class ArpeggiatorBlockWidget(QWidget):
@@ -319,11 +319,10 @@ class ArpeggiatorWidget(QWidget):
 
         # ==================== 3) Ground Note [C3 (48) to C5 (72)] ====================
         self.ground_note_slider = NoScrollSlider(Qt.Orientation.Horizontal)
-        self.ground_note_slider.setRange(48, 72)  # C3 to C5
+        self.ground_note_slider.setRange(47, 72)  # mute(47), then C3(48) to C5(72)
         self.ground_note_slider.setValue(ground_note)
 
-        self.ground_note_spin = NoScrollSpinBox()
-        self.ground_note_spin.setRange(48, 72)
+        self.ground_note_spin = GroundNoteSpinBox()
         self.ground_note_spin.setValue(ground_note)
 
         self.ground_note_label = QLabel(f"Ground note {self.midi_to_note_name(ground_note)}:")
@@ -422,11 +421,10 @@ class ArpeggiatorWidget(QWidget):
 
         # ==================== Variant Offsets: -24..24, integer steps ====================
         self.variant1_slider = NoScrollSlider(Qt.Orientation.Horizontal)
-        self.variant1_slider.setRange(-24, 24)
+        self.variant1_slider.setRange(-25, 24)
         self.variant1_slider.setValue(variants[0])
 
-        self.variant1_spin = NoScrollSpinBox()
-        self.variant1_spin.setRange(-24, 24)
+        self.variant1_spin = MuteSpinBox()
         self.variant1_spin.setValue(variants[0])
 
         row_layout_variant1 = QHBoxLayout()
@@ -448,11 +446,10 @@ class ArpeggiatorWidget(QWidget):
         self.variant1_spin.valueChanged.connect(self.on_variant1_spin_changed)
 
         self.variant2_slider = NoScrollSlider(Qt.Orientation.Horizontal)
-        self.variant2_slider.setRange(-24, 24)
+        self.variant2_slider.setRange(-25, 24)
         self.variant2_slider.setValue(variants[1])
 
-        self.variant2_spin = NoScrollSpinBox()
-        self.variant2_spin.setRange(-24, 24)
+        self.variant2_spin = MuteSpinBox()
         self.variant2_spin.setValue(variants[1])
 
         row_layout_variant2 = QHBoxLayout()
@@ -475,11 +472,10 @@ class ArpeggiatorWidget(QWidget):
         self.variant2_spin.valueChanged.connect(self.on_variant2_spin_changed)
 
         self.variant3_slider = NoScrollSlider(Qt.Orientation.Horizontal)
-        self.variant3_slider.setRange(-24, 24)
+        self.variant3_slider.setRange(-25, 24)
         self.variant3_slider.setValue(variants[2])
 
-        self.variant3_spin = NoScrollSpinBox()
-        self.variant3_spin.setRange(-24, 24)
+        self.variant3_spin = MuteSpinBox()
         self.variant3_spin.setValue(variants[2])
 
         row_layout_variant3 = QHBoxLayout()
@@ -651,7 +647,7 @@ class ArpeggiatorWidget(QWidget):
         #self.update_button_color(self.variant3_button, checked)
 
 
-     # ---------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------
     # CHORDS 1, 2, 3 ACTIVATION
     # ---------------------------------------------------------------------------------------
     major_scale = [2, 4, 5, 7, 9, 11, 12]       # C D E F G A B C

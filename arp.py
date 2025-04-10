@@ -50,13 +50,23 @@ class Arpeggiator():
         pentatonic_scale = [0, 2, 4, 7, 9, 12]         # C D E G A C
 
         # Determine the notes to play
-        notes = [self.ground_note]
+        notes = [self.ground_note] if self.ground_note != 47 else []  # 47 is a special case for silence (48 is C3)
         for i, offset in enumerate(self.variants):
+            # Special case: If offset is -25, interpret as silence
             if self.variants_active[i]:
-                notes.append(self.ground_note + offset)
+                print(f"Variant {i} active with offset {offset}")
+                if offset == -99:
+                    notes.append(0)  # Silence
+                else:
+                    notes.append(self.ground_note + offset)
 
-        
-        
+        if not notes:
+            t = (60 / bpm) * (1 / self.rate)  # 1 full note length
+            return [
+                mido.Message('note_off', note=0, velocity=self.velocity, time=0), 
+                mido.Message('note_off', note=0, velocity=self.velocity, time=t)
+            ], t
+
         """
         # Chord modes override variants if active
         if self.chords_active[0]:  # Major
@@ -66,7 +76,6 @@ class Arpeggiator():
         elif self.chords_active[2]:  # Pentatonic
             notes = [self.ground_note + i for i in pentatonic_scale[:4]]
         """
-
 
         if self.mode == Mode.UP:
             notes.sort()

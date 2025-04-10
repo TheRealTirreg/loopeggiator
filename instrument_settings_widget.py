@@ -1,7 +1,7 @@
 # instrument_settings_widget.py
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QCheckBox, QPushButton
 from PySide6.QtCore import Qt
-from no_scrolling import NoScrollSlider, NoScrollComboBox
+from custom_widgets import NoScrollSlider, NoScrollComboBox
 
 class InstrumentSettingsPanel(QWidget):
     def __init__(self, synth, row_id, parent=None):

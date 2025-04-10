@@ -67,6 +67,8 @@ class SynthPlayer(QObject):
             if msg.type == 'program_change':
                 self.fs.program_select(channel, self.sfid, 0, msg.program)
             elif msg.type == 'note_on':
+                if msg.note == 0:  # Ignore note 0 (placeholder for silence)
+                    continue
                 velocity = max(0, min(msg.velocity, 127))  # clip velocity
                 self.fs.noteon(channel, msg.note, velocity)
             elif isinstance(msg, mido.MetaMessage) and msg.type == "marker":
