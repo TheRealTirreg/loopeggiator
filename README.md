@@ -27,8 +27,10 @@ See requirements.txt for needed packages for installation.
 
 - [x] Volume 
 - [x] duplicate: variant ticks
-- [ ] Deactivate chords Shortcuts if not active (they should recognize if it is their mode)
+- [x] Deactivate chords Shortcuts if not active (they should recognize if it is their mode)
 - [ ] Effects just apply on the ground note
+- [ ] Rate: Spinbox does not work
+- [ ] Rate: Scrolling makes it impossible to change the rate
 
 ## Optional
 

@@ -861,30 +861,52 @@ class ArpeggiatorWidget(QWidget):
         """Set variant activations and offsets safely without toggling signals."""
 
         if len(active) != 3 or len(values) != 3:
+            print(f"Warning: set_variants called with invalid data: {active}, {values}")
             return  # ignore malformed data
 
         self.arp.variants_active = active
         self.arp.variants = values
 
-        # Buttons
-        self.variant1_button.setChecked(active[0])
-        self.update_button_color(self.variant1_button, active[0])
+        # Variant 1
+        self.active1_checkbox.blockSignals(True)
+        self.active1_checkbox.setChecked(active[0])
+        self.active1_checkbox.blockSignals(False)
 
-        self.variant2_button.setChecked(active[1])
-        self.update_button_color(self.variant2_button, active[1])
-
-        self.variant3_button.setChecked(active[2])
-        self.update_button_color(self.variant3_button, active[2])
-
-        # Spin boxes
-        self.variant1_spin.setValue(values[0])
-        self.variant2_spin.setValue(values[1])
-        self.variant3_spin.setValue(values[2])
-
-        # Sliders
+        self.variant1_slider.blockSignals(True)
         self.variant1_slider.setValue(values[0])
+        self.variant1_slider.blockSignals(False)
+
+        self.variant1_spin.blockSignals(True)
+        self.variant1_spin.setValue(values[0])
+        self.variant1_spin.blockSignals(False)
+
+        # Variant 2
+        self.active2_checkbox.blockSignals(True)
+        self.active2_checkbox.setChecked(active[1])
+        self.active2_checkbox.blockSignals(False)
+
+        self.variant2_slider.blockSignals(True)
         self.variant2_slider.setValue(values[1])
+        self.variant2_slider.blockSignals(False)
+
+        self.variant2_spin.blockSignals(True)
+        self.variant2_spin.setValue(values[1])
+        self.variant2_spin.blockSignals(False)
+
+        # Variant 3
+        self.active3_checkbox.blockSignals(True)
+        self.active3_checkbox.setChecked(active[2])
+        self.active3_checkbox.blockSignals(False)
+
+        self.variant3_slider.blockSignals(True)
         self.variant3_slider.setValue(values[2])
+        self.variant3_slider.blockSignals(False)
+
+        self.variant3_spin.blockSignals(True)
+        self.variant3_spin.setValue(values[2])
+        self.variant3_spin.blockSignals(False)
+
+        self.update_chord_button_states()
 
 
 def main():
