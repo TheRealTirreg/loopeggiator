@@ -11,9 +11,9 @@ See requirements.txt for needed packages for installation.
 - [x] Save & load
 - [X] Remove Arp & Instrument row 
 - [X] Total volume
-- [ ] Effets de son
+- [x] Effets de son
 - [x] Adjust front end so it shows where we are on the beat atm
-- [ ] Report
+- [x] Report
 - [x] Move arps left and right
 - [x] Duplicate
 - [x] Variant option 0 to play a silent sound (pauses in arpeggios possible)
@@ -24,15 +24,16 @@ See requirements.txt for needed packages for installation.
 ## Bugs
 
 - [x] Volume
-- [ ] duplicate: variant ticks
+- [x] duplicate: variant ticks
 - [ ] Deactivate chords Shortcuts if not active (they should recognize if it is their mode)
 
 ## Optional
 
+- [ ] Undo/Redo / Ctrl+Z/Ctrl+Shift+Z
 - [ ] Small arp view (make height smaller if row not selectedand replace by some other thing)
 - [ ] Small arp view (make width smaller)
 - [ ] Zoom?
+- [ ] Arp volume?
 - [x] Change soundfont?
 - [x] Limit to max_rows rows (16)
-- [ ] Arp volume?
 - [x] Vertical scrolling, scrolling in general
