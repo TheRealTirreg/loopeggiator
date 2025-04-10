@@ -442,9 +442,9 @@ class ArpeggiatorWidget(QWidget):
         self.update_button_color(self.btn_penta, chords_active[2])
 
         # Connect toggles to handlers
-        self.btn_major.toggled.connect(lambda checked: self.on_major_button_toggled(checked))
-        self.btn_minor.toggled.connect(lambda checked: self.on_minor_button_toggled(checked))
-        self.btn_penta.toggled.connect(lambda checked: self.on_penta_button_toggled(checked))
+        self.btn_major.toggled.connect(self.on_major_button_toggled)
+        self.btn_minor.toggled.connect(self.on_minor_button_toggled)
+        self.btn_penta.toggled.connect(self.on_penta_button_toggled)
 
         # Add buttons to layout
         self.variant_layout.addWidget(self.btn_major)
@@ -639,6 +639,7 @@ class ArpeggiatorWidget(QWidget):
         self.ground_note_spin.blockSignals(False)
         self.update_ground_note_label(slider_value)
         self.arp.ground_note = slider_value
+        self.update_chord_button_states()
 
     def on_ground_note_spin_changed(self, spin_value: int):
         self.ground_note_slider.blockSignals(True)
@@ -646,6 +647,7 @@ class ArpeggiatorWidget(QWidget):
         self.ground_note_slider.blockSignals(False)
         self.update_ground_note_label(spin_value)
         self.arp.ground_note = spin_value
+        self.update_chord_button_states()
 
     def update_ground_note_label(self, midi_note: int):
         note_name = self.midi_to_note_name(midi_note)
@@ -690,67 +692,122 @@ class ArpeggiatorWidget(QWidget):
     def on_variant1_checkbox_toggled(self, checked: int):
         checked = checked == 2  # Qt.Checked
         self.arp.variants_active[0] = checked
-        print(f"Variant 1 active: {checked} with value {self.arp.variants[0]}")
+        self.update_chord_button_states()
 
     def on_variant2_checkbox_toggled(self, checked: int):
         checked = checked == 2  # Qt.Checked
         self.arp.variants_active[1] = checked
+        self.update_chord_button_states()
 
     def on_variant3_checkbox_toggled(self, checked: int):
         checked = checked == 2  # Qt.Checked
         self.arp.variants_active[2] = checked
+        self.update_chord_button_states()
 
     # ---------------------------------------------------------------------------------------
     # CHORDS 1, 2, 3 ACTIVATION
     # ---------------------------------------------------------------------------------------
     major_scale = [2, 4, 5, 7, 9, 11, 12]       # C D E F G A B C
     minor_scale = [2, 3, 5, 7, 8, 10, 12]       # C D Eb F G Ab Bb C
-    pentatonic_scale = [2, 4, 7, 9, 12]         # C D E G A C
+    pentatonic_scale = {2, 4, 7, 9, 12}         # C D E G A C
     
     def on_major_button_toggled(self, checked: bool):
-        self.handle_variant_toggle(index=0, checked=checked)
+        self.handle_chord_button_pressed(index=0, checked=checked)
 
     def on_minor_button_toggled(self, checked: bool):
-        self.handle_variant_toggle(index=1, checked=checked)
+        self.handle_chord_button_pressed(index=1, checked=checked)
 
     def on_penta_button_toggled(self, checked: bool):
-        self.handle_variant_toggle(index=2, checked=checked)
+        self.handle_chord_button_pressed(index=2, checked=checked)
 
-    def handle_variant_toggle(self, index: int, checked: bool):
+    def handle_chord_button_pressed(self, index: int, checked: bool):
+        """Applies a triad or scale fragment when a chord button is pressed."""
         buttons = [self.btn_major, self.btn_minor, self.btn_penta]
         sliders = [self.variant1_slider, self.variant2_slider, self.variant3_slider]
         checkboxes = [self.active1_checkbox, self.active2_checkbox, self.active3_checkbox]
-        scales = [self.major_scale, self.minor_scale, self.pentatonic_scale]
+
+        triads = {
+            0: [4, 7],  # Major triad
+            1: [3, 7],  # Minor triad
+            2: [2, 4, 7],  # Pentatonic fragment (C-D-E-G)
+        }
+
+        # Block button signals to avoid recursion
+        for btn in buttons:
+            btn.blockSignals(True)
 
         if checked:
-            # Set this one active, others off
+            # Turn off other buttons
             for i, btn in enumerate(buttons):
-                state = (i == index)
-                self.arp.chords_active[i] = state
-                btn.setChecked(state)
-                self.update_button_color(btn, state)
+                btn.setChecked(i == index)
+                self.arp.chords_active[i] = (i == index)
+                self.update_button_color(btn, i == index)
 
-            # Activate all checkboxes and variant flags
+            # Apply chord pattern to first 3 variants
+            intervals = triads[index]
             for i in range(3):
-                self.arp.variants_active[i] = True
-                checkboxes[i].setChecked(True)
-
-            # Set scale preset
-            for slider, val in zip(sliders, scales[index][:3]):
-                slider.setValue(val)
-
+                active = i < len(intervals)
+                checkboxes[i].setChecked(active)
+                sliders[i].setValue(intervals[i] if active else 0)
+                self.arp.variants_active[i] = active
+                self.arp.variants[i] = intervals[i] if active else 0
         else:
-            # Turn this chord type off
+            # Toggle off: deactivate all
+            for i in range(3):
+                checkboxes[i].setChecked(False)
+                sliders[i].setValue(0)
+                self.arp.variants_active[i] = False
+                self.arp.variants[i] = 0
             self.arp.chords_active[index] = False
             self.update_button_color(buttons[index], False)
 
-            # Check if all chord types are now off
-            if not any(self.arp.chords_active):
-                for i in range(3):
-                    self.arp.variants_active[i] = False
-                    checkboxes[i].setChecked(False)
-                    sliders[i].setValue(0)
+        for btn in buttons:
+            btn.blockSignals(False)
 
+        self.update_chord_button_states()
+
+    def update_chord_button_states(self):
+        """Visually highlight chord buttons if current variants match a known chord."""
+
+        intervals = [
+            self.arp.variants[i]
+            for i in range(3)
+            if self.arp.variants_active[i]
+        ]
+        intervals_set = set(intervals)
+
+        # Major match = +4 and +7 present
+        is_major = 4 in intervals_set and 7 in intervals_set
+
+        # Minor match = +3 and +7 present
+        is_minor = 3 in intervals_set and 7 in intervals_set
+
+        # Pentatonic match = at least 3 intervals in penta set
+        penta_set = {2, 4, 7, 9, 12, -3, -5, -7}
+        is_penta = len(intervals_set & penta_set) >= 3
+
+        # Block button signals to avoid recursion
+        self.btn_major.blockSignals(True)
+        self.btn_minor.blockSignals(True)
+        self.btn_penta.blockSignals(True)
+
+        # Update button states + visuals
+        self.btn_major.setChecked(is_major)
+        self.update_button_color(self.btn_major, is_major)
+        self.arp.chords_active[0] = is_major
+
+        self.btn_minor.setChecked(is_minor)
+        self.update_button_color(self.btn_minor, is_minor)
+        self.arp.chords_active[1] = is_minor
+
+        self.btn_penta.setChecked(is_penta)
+        self.update_button_color(self.btn_penta, is_penta)
+        self.arp.chords_active[2] = is_penta
+
+        # Unblock signals
+        self.btn_major.blockSignals(False)
+        self.btn_minor.blockSignals(False)
+        self.btn_penta.blockSignals(False)
 
     # ---------------------------------------------------------------------------------------
     # VARIANT 1, 2, 3 OFFSETS
@@ -760,36 +817,42 @@ class ArpeggiatorWidget(QWidget):
         self.variant1_spin.setValue(slider_value)
         self.variant1_spin.blockSignals(False)
         self.arp.variants[0] = slider_value
+        self.update_chord_button_states()
 
     def on_variant1_spin_changed(self, spin_value: int):
         self.variant1_slider.blockSignals(True)
         self.variant1_slider.setValue(spin_value)
         self.variant1_slider.blockSignals(False)
         self.arp.variants[0] = spin_value
+        self.update_chord_button_states()
 
     def on_variant2_slider_changed(self, slider_value: int):
         self.variant2_spin.blockSignals(True)
         self.variant2_spin.setValue(slider_value)
         self.variant2_spin.blockSignals(False)
         self.arp.variants[1] = slider_value
+        self.update_chord_button_states()
 
     def on_variant2_spin_changed(self, spin_value: int):
         self.variant2_slider.blockSignals(True)
         self.variant2_slider.setValue(spin_value)
         self.variant2_slider.blockSignals(False)
         self.arp.variants[1] = spin_value
+        self.update_chord_button_states()
 
     def on_variant3_slider_changed(self, slider_value: int):
         self.variant3_spin.blockSignals(True)
         self.variant3_spin.setValue(slider_value)
         self.variant3_spin.blockSignals(False)
         self.arp.variants[2] = slider_value
+        self.update_chord_button_states()
 
     def on_variant3_spin_changed(self, spin_value: int):
         self.variant3_slider.blockSignals(True)
         self.variant3_slider.setValue(spin_value)
         self.variant3_slider.blockSignals(False)
         self.arp.variants[2] = spin_value
+        self.update_chord_button_states()
 
     # ---------------------------------------------------------------------------------------
     # VARIANTS again
