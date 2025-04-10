@@ -2,6 +2,8 @@
 
 Loop station meets arpeggiators in python.
 
+See requirements.txt for needed packages for installation.
+
 ## Ideas
 
 - [x] One loop should have length max(all rows) (merger les arpeggios de TOUT, jouer un seul loop.)
@@ -15,8 +17,8 @@ Loop station meets arpeggiators in python.
 - [x] Move arps left and right
 - [x] Duplicate
 - [x] Variant option 0 to play a silent sound (pauses in arpeggios possible)
-- [ ] Needed packages for program installation? (requirements.txt?)
-- [ ] No mode (all buttons deactivated)
+- [x] Needed packages for program installation? (requirements.txt?)
+- [x] No mode (all buttons deactivated)
 - [x] Mute whole row by key press (1-0, [Y/Z], U, I, O, P for all 16 channels)
 
 ## Bugs
