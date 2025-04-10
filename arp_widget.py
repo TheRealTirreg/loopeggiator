@@ -354,7 +354,7 @@ class ArpeggiatorWidget(QWidget):
 
         # Create a button group for exclusive checkable buttons
         self.mode_button_group = QButtonGroup(self)
-        self.mode_button_group.setExclusive(True)
+        self.mode_button_group.setExclusive(False)
 
         self.btn_up = QPushButton("Up")
         self.btn_down = QPushButton("Down")
@@ -626,31 +626,28 @@ class ArpeggiatorWidget(QWidget):
     # MODE
     # ---------------------------------------------------------------------------------------
     def on_mode_button_clicked(self):
-        # Get the sender button
         sender = self.sender()
+        clicked_mode = self.get_mode_from_button(sender)
 
-        # Set the mode based on the button clicked
-        if sender == self.btn_up:
-            self.arp.mode = Mode.UP
-        elif sender == self.btn_down:
-            self.arp.mode = Mode.DOWN
-        elif sender == self.btn_random:
-            self.arp.mode = Mode.RANDOM
+        if self.arp.mode == clicked_mode:
+            # Toggle OFF: same mode clicked again
+            self.arp.mode = None
+            for btn in self.mode_button_group.buttons():
+                btn.setChecked(False)
+        else:
+            # Toggle ON: different mode clicked
+            self.arp.mode = clicked_mode
+            for btn in self.mode_button_group.buttons():
+                btn.setChecked(btn == sender)
 
-        # Uncheck other buttons in the group
-        for button in self.mode_button_group.buttons():
-            if button != sender:
-                button.setChecked(False)
-
-        # Set the clicked button to checked
-        sender.setChecked(True)
-
-    def set_mode(self, mode: Mode):
-        """Set the arpeggiator mode and update button states without triggering events."""
-        self.arp.mode = mode
-        self.btn_up.setChecked(mode == Mode.UP)
-        self.btn_down.setChecked(mode == Mode.DOWN)
-        self.btn_random.setChecked(mode == Mode.RANDOM)
+    def get_mode_from_button(self, button):
+        if button == self.btn_up:
+            return Mode.UP
+        elif button == self.btn_down:
+            return Mode.DOWN
+        elif button == self.btn_random:
+            return Mode.RANDOM
+        return None
 
     # ---------------------------------------------------------------------------------------
     # VARIANT 1, 2, 3 ACTIVATION

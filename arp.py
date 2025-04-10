@@ -60,7 +60,6 @@ class Arpeggiator():
         for i, offset in enumerate(self.variants):
             # Special case: If offset is -25, interpret as silence
             if self.variants_active[i]:
-                print(f"Variant {i} active with offset {offset}")
                 if offset == -99:
                     notes.append(0)  # Silence
                 else:
@@ -89,6 +88,7 @@ class Arpeggiator():
             notes.sort(reverse=True)
         elif self.mode == Mode.RANDOM:
             random.shuffle(notes)
+        # If self.mode is None, keep the notes in input order (default: ground note + variant1 + variant2 + variant3)
 
         # Calculate the duration of a single note. The total length of the arpeggio is one full note length.
         # Calculate each note's duration based on the note length and the rate.
