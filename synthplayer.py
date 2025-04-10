@@ -18,7 +18,7 @@ class SynthPlayer(QObject):
         self.sf_path = soundfont_path
         self.max_rows = max_rows
 
-        self.presets = self.extract_presets(soundfont_path, allowed_banks={0})
+        self.presets = self.extract_presets(soundfont_path)
         self.presets_updated.emit()
 
         self.fs = fluidsynth.Synth()
@@ -99,7 +99,7 @@ class SynthPlayer(QObject):
                     self.fs.program_select(ch, new_sfid, 0, 0)
                 self.sfid = new_sfid
                 self.sf_path = path
-                self.presets = self.extract_presets(path, allowed_banks={0})
+                self.presets = self.extract_presets(path)
                 print(f"Loaded SoundFont: {path}")
                 self.presets_updated.emit()
                 return True
@@ -122,25 +122,31 @@ class SynthPlayer(QObject):
         return filename if filename else None
     
     @staticmethod
-    def extract_presets(soundfont_path, allowed_banks={0}):
-        from pprint import pprint
+    def extract_presets(soundfont_path, allowed_banks=None):
         with open(soundfont_path, 'rb') as sf2:
             soundfont = Sf2File(sf2)
             presets = []
             for p in soundfont.presets:
                 bank = getattr(p, "bank", None)
-                preset = getattr(p, "preset", None)
+                program = getattr(p, "preset", None)
                 name = getattr(p, "name", "Unknown")
-                # print(f"Preset: {name}, Bank: {bank}, Program/Preset: {preset}")
-                if bank in allowed_banks:
+
+                if bank is None or program is None:
+                    print(f"Skipping invalid preset: {name} (bank: {bank}, program: {program})") if name != "EOP" else None
+                    continue
+
+                if allowed_banks is None or bank in allowed_banks:
                     presets.append({
                         "name": name,
                         "bank": bank,
-                        "program": preset
+                        "program": program
                     })
+            
             print(f"Extracted {len(presets)} presets from {soundfont_path}")
             presets.sort(key=lambda x: (x["bank"], x["program"]))
+
             return presets
+
 
 
 if __name__ == "__main__":    

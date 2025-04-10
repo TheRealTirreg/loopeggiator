@@ -72,9 +72,8 @@ class InstrumentRowContainer(QFrame):
             self.instrument = preset["program"]
             bank = preset.get("bank", 0)
         else:
-            # fallback for old format
-            print("Old format in instrument row container change_instrument method")
-            self.instrument = preset if isinstance(preset, int) else 0
+            print("Old format in instrument row container change_instrument method, preset is not a dict")
+            self.instrument = preset if isinstance(preset, int) else 0  # Standard MIDI program number, usually piano on 0
             bank = 0
 
         self.synth.change_instrument(self.id, self.instrument, bank=bank)

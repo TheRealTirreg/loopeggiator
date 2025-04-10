@@ -53,6 +53,11 @@ class InstrumentSettingsPanel(QWidget):
         if not self.synth.presets:
             print("No presets available in update_instrument_list")
             return
+        
         for preset in self.synth.presets:
             label = f"({preset['bank']}/{preset['program']}) {preset['name']}"
             self.instrument_combo.addItem(label, preset)
+
+        if self.instrument_combo.count() > 0:
+            self.instrument_combo.setCurrentIndex(0)
+            self.instrument_combo.currentIndexChanged.emit(0)
