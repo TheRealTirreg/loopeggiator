@@ -36,6 +36,7 @@ class LoopArpeggiatorMainWindow(QMainWindow):
 
         # ==================== Base Window Setup =====================
         super().__init__()
+        self.setFocusPolicy(Qt.StrongFocus)
         self.setWindowTitle("Arpeggiator Loop Station")
         self.resize(1200, 600)
 
@@ -144,6 +145,9 @@ class LoopArpeggiatorMainWindow(QMainWindow):
             row.set_block_width(max_rate)
 
     def add_instrument(self):
+        if len(self.instrument_rows) >= self.synth.max_rows:
+            return
+        
         row = InstrumentRowContainer(self.synth, len(self.instrument_rows), parent=self)
         self.instrument_rows.append(row)
         index_for_button = self.vlayout.count() - 1
@@ -153,6 +157,10 @@ class LoopArpeggiatorMainWindow(QMainWindow):
 
         QTimer.singleShot(10, lambda: self.scroll_area.verticalScrollBar().setValue(
             self.scroll_area.verticalScrollBar().maximum()))  # Scroll to the bottom
+        
+        if len(self.instrument_rows) >= self.synth.max_rows:
+            self.btn_add_instrument.hide()  # Hide the button if max rows reached
+            
         return row
 
     def del_instrument(self, instrument):
@@ -184,6 +192,9 @@ class LoopArpeggiatorMainWindow(QMainWindow):
             # Update the loop length and block widths
             self._on_play_time_changed()
 
+            if len(self.instrument_rows) < self.synth.max_rows:
+                self.btn_add_instrument.show()  # Show the button again if we have space
+
     def update_loop_length(self):
         """Update the loop length label in the top bar."""
         if not self.instrument_rows:
@@ -203,6 +214,34 @@ class LoopArpeggiatorMainWindow(QMainWindow):
             QMetaObject.invokeMethod(block, "flash", Qt.QueuedConnection)  # Queued because this is called from synthplayer thread
         except Exception as e:
             print(f"Failed to highlight block {block_id}: {e}")
+
+    def keyPressEvent(self, event):
+        """Mute/unmute instrument rows using number keys [And t, [y/z], u, i, o, p]."""
+        key_map = {
+            Qt.Key_1: 0,
+            Qt.Key_2: 1,
+            Qt.Key_3: 2,
+            Qt.Key_4: 3,
+            Qt.Key_5: 4,
+            Qt.Key_6: 5,
+            Qt.Key_7: 6,
+            Qt.Key_8: 7,
+            Qt.Key_9: 8,
+            Qt.Key_0: 9,
+            Qt.Key_T: 10,
+            Qt.Key_Z: 11,
+            Qt.Key_Y: 11,  # support QWERTY, QWERTZ and AZERTY
+            Qt.Key_U: 12,
+            Qt.Key_I: 13,
+            Qt.Key_O: 14,
+            Qt.Key_P: 15,
+        }
+
+        if event.key() in key_map:
+            idx = key_map[event.key()]
+            if idx < len(self.instrument_rows):
+                checkbox = self.instrument_rows[idx].mute_checkbox
+                checkbox.setChecked(not checkbox.isChecked())
 
 
 def main():

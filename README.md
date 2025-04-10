@@ -14,10 +14,10 @@ Loop station meets arpeggiators in python.
 - [ ] Report
 - [x] Move arps left and right
 - [x] Duplicate
-- [ ] Variant option 0 to play a silent sound (pauses in arpeggios possible)
+- [x] Variant option 0 to play a silent sound (pauses in arpeggios possible)
 - [ ] Needed packages for program installation? (requirements.txt?)
 - [ ] No mode (all buttons deactivated)
-- [ ] Mute whole row by key press (1-0, [Y/Z], U, I, O, P for all 16 channels)
+- [x] Mute whole row by key press (1-0, [Y/Z], U, I, O, P for all 16 channels)
 
 ## Bugs
 
