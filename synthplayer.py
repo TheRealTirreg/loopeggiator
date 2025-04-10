@@ -66,9 +66,16 @@ class SynthPlayer(QObject):
             # Dispatch to fluidsynth
             if msg.type == 'program_change':
                 self.fs.program_select(channel, self.sfid, 0, msg.program)
+            elif msg.type == 'control_change':
+                #mido.Message('control_change', control=vibrato_cc, value=value)
+                self.fs.cc(channel, 1, msg.value)
             elif msg.type == 'note_on':
                 if msg.note == 0:  # Ignore note 0 (placeholder for silence)
                     continue
+               
+                velocity = max(0, min(msg.velocity, 127))
+                self.fs.noteon(channel, msg.note, velocity)
+
                 velocity = max(0, min(msg.velocity, 127))  # clip velocity
                 self.fs.noteon(channel, msg.note, velocity)
             elif isinstance(msg, mido.MetaMessage) and msg.type == "marker":
@@ -76,6 +83,7 @@ class SynthPlayer(QObject):
                     self.on_marker(msg.text)  # Send block id like '2#0' to make ui flash
             elif msg.type == 'note_off':
                 self.fs.noteoff(channel, msg.note)
+                self.fs.cc(channel, 1, 0)  # Reset modulation
             else:
                 print(f"Unknown message type: {msg.type}")
 

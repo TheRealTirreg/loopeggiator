@@ -46,6 +46,7 @@ class ArpeggiatorBlockWidget(QWidget):
         ground_note=60,
         mode=Mode.UP,
         mute=False,
+        vibrato=False,
         variants_active=None,
         chords_active=None,
         variants=None,
@@ -136,6 +137,7 @@ class ArpeggiatorBlockWidget(QWidget):
             ground_note=ground_note,
             mode=mode,
             mute=mute,
+            vibrato=vibrato,
             variants_active=variants_active,
             chords_active=chords_active,
             variants=variants,
@@ -238,6 +240,7 @@ class ArpeggiatorWidget(QWidget):
         ground_note=60,  # Midi C4
         mode=Mode.UP,
         mute=False,
+        vibrato=False,
         variants_active=None,
         variants=None,
         chords_active=None,
@@ -262,6 +265,7 @@ class ArpeggiatorWidget(QWidget):
             ground_note,
             mode,
             mute,
+            vibrato,
             velocity,
             variants_active,
             chords_active,
@@ -272,11 +276,21 @@ class ArpeggiatorWidget(QWidget):
         main_layout = QVBoxLayout()
         form_layout = QFormLayout()
 
-        ## Mute box
+        # === Mute & Vibrato on the same row ===
+        checkbox_row = QHBoxLayout()
+
         self.mute_checkbox = QCheckBox("Mute")
         self.mute_checkbox.setChecked(mute)
         self.mute_checkbox.stateChanged.connect(self.on_mute_changed)
-        form_layout.addRow(self.mute_checkbox)
+
+        self.vibrato_checkbox = QCheckBox("Vibrato")
+        self.vibrato_checkbox.setChecked(vibrato)
+        self.vibrato_checkbox.stateChanged.connect(self.on_vibrato_changed)
+
+        checkbox_row.addWidget(self.mute_checkbox)
+        checkbox_row.addWidget(self.vibrato_checkbox)
+
+        form_layout.addRow(checkbox_row)
         # ==================== 1) Rate (x BPM) [Discrete: 0.5, 1, 2, 4, 8, 16, 32, 64] ====================
         self.rate_values = [0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]
 
@@ -550,6 +564,13 @@ class ArpeggiatorWidget(QWidget):
     def change_arp_volume(self):
         self.arp.velocity = self._parent.velocity
 
+    # ---------------------------------------------------------------------------------------
+    # Vibrato changed
+    # ---------------------------------------------------------------------------------------
+    def on_vibrato_changed(self, state: int):
+        checked = state == 2
+        self.arp.vibrato = checked
+        
     # ---------------------------------------------------------------------------------------
     # NOTE LENGTH
     # ---------------------------------------------------------------------------------------

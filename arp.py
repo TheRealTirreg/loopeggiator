@@ -22,7 +22,7 @@ class Arpeggiator():
     - Have variants:
         - Variants are notes defined by offsets in relation to the ground note
     """
-    def __init__(self, bpm_multiplier: float, note_length: float, ground_note: int, mode: Mode, mute: bool, volume: int, variants_active, chords_active, variants):
+    def __init__(self, bpm_multiplier: float, note_length: float, ground_note: int, mode: Mode, mute: bool, vibrato: bool, volume: int, variants_active, chords_active, variants):
         # rate: If rate 1, the arpeggio plays at the same speed as the song
         self.rate = bpm_multiplier
         # Determines if the arpeggio is more staccato or legato
@@ -40,11 +40,17 @@ class Arpeggiator():
         self.variants = variants
         # about the mute
         self.mute = mute
+        # about the vibrato
+        self.vibrato = vibrato
 
     def get_arpeggio(self, bpm, instrument) -> Tuple[list[mido.Message], int]:
+        vibrato_cc = 70
+        value = 127 if self.vibrato else 0
         track = [
-            mido.Message('program_change', program=instrument, time=0)  # Set instrument
+            mido.Message('program_change', program=instrument, time=0),  # Set instrument
         ]
+        track.append(mido.Message('control_change', control=vibrato_cc, value=value))  # Set vibrato
+
         major_scale = [0, 2, 4, 5, 7, 9, 11, 12]       # C D E F G A B C
         minor_scale = [0, 2, 3, 5, 7, 8, 10, 12]       # C D Eb F G Ab Bb C
         pentatonic_scale = [0, 2, 4, 7, 9, 12]         # C D E G A C
