@@ -1,6 +1,6 @@
 # Arpyggiator
 
-A simple arpeggiator in python.
+Loop station meets arpeggiators in python.
 
 ## Ideas
 
@@ -16,14 +16,21 @@ A simple arpeggiator in python.
 - [x] Duplicate
 - [ ] Variant option 0 to play a silent sound (pauses in arpeggios possible)
 - [ ] Needed packages for program installation? (requirements.txt?)
+- [ ] No mode (all buttons deactivated)
+- [ ] Mute whole row by key press (1-0, [Y/Z], U, I, O, P for all 16 channels)
 
 ## Bugs
 
 - [x] Volume
+- [ ] duplicate: variant ticks
+- [ ] Deactivate chords Shortcuts if not active (they should recognize if it is their mode)
 
-### Optional
+## Optional
 
-- [ ] Change soundfont?
+- [ ] Small arp view (make height smaller if row not selectedand replace by some other thing)
+- [ ] Small arp view (make width smaller)
+- [ ] Zoom?
+- [x] Change soundfont?
 - [ ] Limit to max_rows rows (16)
 - [ ] Arp volume?
-- [ ] Vertical scrolling, scrolling in general
+- [x] Vertical scrolling, scrolling in general

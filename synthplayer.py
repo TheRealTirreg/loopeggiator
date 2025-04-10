@@ -4,12 +4,23 @@ import os
 import time
 import mido
 import fluidsynth
+from sf2utils.sf2parse import Sf2File
 from PySide6.QtWidgets import QFileDialog
+from PySide6.QtCore import Signal, QObject
 
 
-class SynthPlayer:
+class SynthPlayer(QObject):
+    presets_updated = Signal()
+
     def __init__(self, soundfont_path, max_rows):
+        super().__init__()
+
+        self.sf_path = soundfont_path
         self.max_rows = max_rows
+
+        self.presets = self.extract_presets(soundfont_path, allowed_banks={0})
+        self.presets_updated.emit()
+
         self.fs = fluidsynth.Synth()
         self.fs.start()  # Start audio driver (is smart enough to choose depending on os)
         self.sfid = self.fs.sfload(soundfont_path)  # Charger la soundfont
@@ -87,7 +98,10 @@ class SynthPlayer:
                 for ch in range(self.max_rows):
                     self.fs.program_select(ch, new_sfid, 0, 0)
                 self.sfid = new_sfid
+                self.sf_path = path
+                self.presets = self.extract_presets(path, allowed_banks={0})
                 print(f"Loaded SoundFont: {path}")
+                self.presets_updated.emit()
                 return True
             except Exception as e:
                 print(f"Failed to load SoundFont: {path}\n{e}")
@@ -106,11 +120,30 @@ class SynthPlayer:
             "SoundFont Files (*.sf2)"
         )
         return filename if filename else None
-
-
-if __name__ == "__main__":
-    import mido
     
+    @staticmethod
+    def extract_presets(soundfont_path, allowed_banks={0}):
+        from pprint import pprint
+        with open(soundfont_path, 'rb') as sf2:
+            soundfont = Sf2File(sf2)
+            presets = []
+            for p in soundfont.presets:
+                bank = getattr(p, "bank", None)
+                preset = getattr(p, "preset", None)
+                name = getattr(p, "name", "Unknown")
+                # print(f"Preset: {name}, Bank: {bank}, Program/Preset: {preset}")
+                if bank in allowed_banks:
+                    presets.append({
+                        "name": name,
+                        "bank": bank,
+                        "program": preset
+                    })
+            print(f"Extracted {len(presets)} presets from {soundfont_path}")
+            presets.sort(key=lambda x: (x["bank"], x["program"]))
+            return presets
+
+
+if __name__ == "__main__":    
     midi_messages = [
         [
             mido.Message('program_change', program=0, time=0),  # Piano

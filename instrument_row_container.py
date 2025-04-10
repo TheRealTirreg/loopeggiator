@@ -18,6 +18,7 @@ class InstrumentRowContainer(QFrame):
         self.instrument = 0
 
         self.settings_panel = InstrumentSettingsPanel(synth, self.id, parent=self)
+        self.settings_panel.update_instrument_list()
         self.arp_panel = InstrumentArpPanel(parent=self, row_container=self)
 
         # Wire settings panel to volume/instrument change behavior
@@ -66,8 +67,17 @@ class InstrumentRowContainer(QFrame):
         self.volume_line_changed.emit()
 
     def change_instrument(self, index):
-        self.instrument = self.settings_panel.instrument_combo.itemData(index)
-        self.synth.change_instrument(self.id, self.instrument)
+        preset = self.settings_panel.instrument_combo.itemData(index)
+        if preset and isinstance(preset, dict):
+            self.instrument = preset["program"]
+            bank = preset.get("bank", 0)
+        else:
+            # fallback for old format
+            print("Old format in instrument row container change_instrument method")
+            self.instrument = preset if isinstance(preset, int) else 0
+            bank = 0
+
+        self.synth.change_instrument(self.id, self.instrument, bank=bank)
 
     def get_play_time(self, bpm):
         return sum(block.get_play_time(bpm) for block in self.arp_panel.arp_blocks)
