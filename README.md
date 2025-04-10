@@ -23,7 +23,7 @@ See requirements.txt for needed packages for installation.
 
 ## Bugs
 
-- [x] Volume
+- [x] Volume 
 - [x] duplicate: variant ticks
 - [ ] Deactivate chords Shortcuts if not active (they should recognize if it is their mode)
 - [ ] Effects just apply on the ground note
