@@ -2,6 +2,8 @@
 
 Loop station meets arpeggiators in python.
 
+This is just a small test project to try PyQt6 and the first time programming with music software in general.
+
 See requirements.txt for needed packages for installation.
 
 ## Ideas
