@@ -1,4 +1,4 @@
-# Arpyggiator
+# Loopeggiator
 
 Loop station meets arpeggiators in python.
 
