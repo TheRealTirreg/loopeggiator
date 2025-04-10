@@ -140,6 +140,7 @@ class ArpeggiatorBlockWidget(QWidget):
             mode=mode,
             mute=mute,
             vibrato=vibrato,
+            reverb=reverb,
             chorus=chorus,
             variants_active=variants_active,
             chords_active=chords_active,
