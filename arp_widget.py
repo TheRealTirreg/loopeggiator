@@ -47,6 +47,8 @@ class ArpeggiatorBlockWidget(QWidget):
         mode=Mode.UP,
         mute=False,
         vibrato=False,
+        reverb=False,
+        chorus=False,
         variants_active=None,
         chords_active=None,
         variants=None,
@@ -138,6 +140,7 @@ class ArpeggiatorBlockWidget(QWidget):
             mode=mode,
             mute=mute,
             vibrato=vibrato,
+            chorus=chorus,
             variants_active=variants_active,
             chords_active=chords_active,
             variants=variants,
@@ -174,6 +177,9 @@ class ArpeggiatorBlockWidget(QWidget):
             "ground_note": arp.ground_note,
             "mode": arp.mode,
             "mute": arp.mute,
+            "vibrato": arp.vibrato,
+            "reverb": arp.reverb,
+            "chorus": arp.chorus,
             "variants_active": arp.variants_active,
             "chords_active": arp.chords_active,
             "variants": arp.variants
@@ -241,6 +247,8 @@ class ArpeggiatorWidget(QWidget):
         mode=Mode.UP,
         mute=False,
         vibrato=False,
+        reverb=False,
+        chorus=False,
         variants_active=None,
         variants=None,
         chords_active=None,
@@ -266,6 +274,8 @@ class ArpeggiatorWidget(QWidget):
             mode,
             mute,
             vibrato,
+            reverb,
+            chorus,
             velocity,
             variants_active,
             chords_active,
@@ -287,8 +297,18 @@ class ArpeggiatorWidget(QWidget):
         self.vibrato_checkbox.setChecked(vibrato)
         self.vibrato_checkbox.stateChanged.connect(self.on_vibrato_changed)
 
+        self.reverb_checkbox = QCheckBox("Reverb")
+        self.reverb_checkbox.setChecked(reverb)
+        self.reverb_checkbox.stateChanged.connect(self.on_reverb_changed)
+
+        self.chorus_checkbox = QCheckBox("Chorus")
+        self.chorus_checkbox.setChecked(chorus)
+        self.chorus_checkbox.stateChanged.connect(self.on_chorus_changed)
+
         checkbox_row.addWidget(self.mute_checkbox)
         checkbox_row.addWidget(self.vibrato_checkbox)
+        checkbox_row.addWidget(self.reverb_checkbox)
+        checkbox_row.addWidget(self.chorus_checkbox)
 
         form_layout.addRow(checkbox_row)
         # ==================== 1) Rate (x BPM) [Discrete: 0.5, 1, 2, 4, 8, 16, 32, 64] ====================
@@ -570,7 +590,21 @@ class ArpeggiatorWidget(QWidget):
     def on_vibrato_changed(self, state: int):
         checked = state == 2
         self.arp.vibrato = checked
+
+    # ---------------------------------------------------------------------------------------
+    # Chorus changed
+    # ---------------------------------------------------------------------------------------
+    def on_chorus_changed(self, state: int):
+        checked = state == 2
+        self.arp.chorus = checked
         
+    # ---------------------------------------------------------------------------------------
+    # Reverb changed
+    # ---------------------------------------------------------------------------------------
+    def on_reverb_changed(self, state: int):
+        checked = state == 2
+        self.arp.reverb = checked
+
     # ---------------------------------------------------------------------------------------
     # NOTE LENGTH
     # ---------------------------------------------------------------------------------------
