@@ -1,0 +1,13 @@
+# requirements.txt
+
+# Python dependencies
+PySide6>=6.8.3
+mido>=1.2.10
+pyfluidsynth>=1.3.4
+sf2utils>=1.0.0
+
+
+# --- Note ---
+# You may need to install FluidSynth separately:
+#   Ubuntu:   sudo apt install fluidsynth
+#   Windows:  https://github.com/FluidSynth/fluidsynth/wiki/Download
