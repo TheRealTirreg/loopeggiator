@@ -776,15 +776,14 @@ class ArpeggiatorWidget(QWidget):
         ]
         intervals_set = set(intervals)
 
-        # Major match = +4 and +7 present
-        is_major = 4 in intervals_set and 7 in intervals_set
-
-        # Minor match = +3 and +7 present
-        is_minor = 3 in intervals_set and 7 in intervals_set
-
-        # Pentatonic match = at least 3 intervals in penta set
+                # Pentatonic match = at least 3 intervals in penta set
         penta_set = {2, 4, 7, 9, 12, -3, -5, -7}
         is_penta = len(intervals_set & penta_set) >= 3
+
+        # Major and minor are only valid if penta is not matched
+        is_major = not is_penta and 4 in intervals_set and 7 in intervals_set
+        is_minor = not is_penta and not is_major and 3 in intervals_set and 7 in intervals_set
+
 
         # Block button signals to avoid recursion
         self.btn_major.blockSignals(True)
