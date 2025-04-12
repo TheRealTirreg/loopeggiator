@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer, Slot
 from PySide6.QtGui import QColor
 from arp import Arpeggiator, Mode
-from custom_widgets import NoScrollSlider, NoScrollSpinBox, NoScrollDoubleSpinBox, MuteSpinBox, GroundNoteSpinBox
+from custom_widgets import NoScrollSlider, NoScrollDoubleSpinBox, MuteSpinBox, GroundNoteSpinBox
 
 
 class ArpeggiatorBlockWidget(QWidget):
@@ -44,6 +44,7 @@ class ArpeggiatorBlockWidget(QWidget):
         rate=1.0,
         note_length=0.2,
         ground_note=60,
+        ground_note_mute=False,
         mode=None,
         mute=False,
         vibrato=False,
@@ -176,6 +177,7 @@ class ArpeggiatorBlockWidget(QWidget):
             "rate": arp.rate,
             "note_length": arp.note_length,
             "ground_note": arp.ground_note,
+            "ground_note_mute": arp.mute_ground_note,
             "mode": arp.mode,
             "mute": arp.mute,
             "vibrato": arp.vibrato,
@@ -245,6 +247,7 @@ class ArpeggiatorWidget(QWidget):
         rate=1.0,  # BPM multiplier
         note_length=0.2,
         ground_note=60,  # Midi C4
+        ground_note_mute=False,
         mode=None,
         mute=False,
         vibrato=False,
@@ -272,6 +275,7 @@ class ArpeggiatorWidget(QWidget):
             rate,
             note_length,
             ground_note,
+            ground_note_mute,
             mode,
             mute,
             vibrato,
@@ -328,7 +332,7 @@ class ArpeggiatorWidget(QWidget):
         row_layout_rate = QHBoxLayout()
         row_layout_rate.addWidget(self.rate_slider)
         row_layout_rate.addWidget(self.rate_spin)
-        form_layout.addRow("Rate (x BPM):         ", row_layout_rate)
+        form_layout.addRow("Rate (x BPM):         ", row_layout_rate)  # set width for whole column
 
         self.rate_slider.valueChanged.connect(self.on_rate_slider_changed)
         self.rate_spin.valueChanged.connect(self.on_rate_spin_changed)
@@ -354,17 +358,23 @@ class ArpeggiatorWidget(QWidget):
 
         # ==================== 3) Ground Note [C3 (48) to C5 (72)] ====================
         self.ground_note_slider = NoScrollSlider(Qt.Orientation.Horizontal)
-        self.ground_note_slider.setRange(47, 72)  # mute(47), then C3(48) to C5(72)
+        self.ground_note_slider.setRange(48, 72)
         self.ground_note_slider.setValue(ground_note)
 
         self.ground_note_spin = GroundNoteSpinBox()
         self.ground_note_spin.setValue(ground_note)
 
+        self.mute_ground_checkbox = QCheckBox()
+        self.mute_ground_checkbox.setChecked(False)
+        self.mute_ground_checkbox.stateChanged.connect(self.on_mute_ground_note_changed)
+
         self.ground_note_label = QLabel(f"Ground note {self.midi_to_note_name(ground_note)}:")
 
         row_layout_ground_note = QHBoxLayout()
         row_layout_ground_note.addWidget(self.ground_note_slider)
+        row_layout_ground_note.addWidget(self.mute_ground_checkbox)
         row_layout_ground_note.addWidget(self.ground_note_spin)
+
         form_layout.addRow(self.ground_note_label, row_layout_ground_note)
 
         self.ground_note_slider.valueChanged.connect(self.on_ground_note_slider_changed)
@@ -658,6 +668,10 @@ class ArpeggiatorWidget(QWidget):
         octave = midi_note // 12 - 1
         note = notes[midi_note % 12]
         return f"{note}{octave}"
+    
+    def on_mute_ground_note_changed(self, state: int):
+        checked = state == 2  # Qt.Checked
+        self.arp.mute_ground_note = checked
     
     # ---------------------------------------------------------------------------------------
     # MODE

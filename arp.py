@@ -22,13 +22,14 @@ class Arpeggiator():
     - Have variants:
         - Variants are notes defined by offsets in relation to the ground note
     """
-    def __init__(self, bpm_multiplier: float, note_length: float, ground_note: int, mode: Mode, mute: bool, vibrato: bool, reverb: bool, chorus: bool, volume: int, variants_active, chords_active, variants):
+    def __init__(self, bpm_multiplier: float, note_length: float, ground_note: int, mute_ground_note: bool, mode: Mode, mute: bool, vibrato: bool, reverb: bool, chorus: bool, volume: int, variants_active, chords_active, variants):
         # rate: If rate 1, the arpeggio plays at the same speed as the song
         self.rate = bpm_multiplier
         # Determines if the arpeggio is more staccato or legato
         self.note_length = note_length
         # e.g. midi C4 = 60
         self.ground_note = ground_note
+        self.mute_ground_note = mute_ground_note
         # Mode of the arpeggio (up, down, random)
         self.mode = mode
         self.velocity = volume
@@ -63,7 +64,11 @@ class Arpeggiator():
         pentatonic_scale = [0, 2, 4, 7, 9, 12]         # C D E G A C
 
         # Determine the notes to play
-        notes = [self.ground_note] if self.ground_note != 47 else []  # 47 is a special case for silence (48 is C3)
+        notes = []
+        if not self.mute_ground_note:
+            notes.append(self.ground_note)
+        else:
+            notes.append(0)  # Silence
         for i, offset in enumerate(self.variants):
             # Special case: If offset is -25, interpret as silence
             if self.variants_active[i]:

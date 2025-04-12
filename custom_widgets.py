@@ -76,16 +76,4 @@ class MuteSpinBox(NoScrollSpinBox):
 class GroundNoteSpinBox(NoScrollSpinBox):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setRange(47, 72)  # 48 = C3, 72 = C5, 47 will mean "mute" (leftmost value)
-
-    def textFromValue(self, value):
-        return "mute" if value == 47 else str(value)
-
-    def valueFromText(self, text):
-        return 47 if text.lower() == "mute" else int(text)
-
-    def validate(self, text, pos):
-        if text.lower() == "mute":
-            return (QValidator.Acceptable, text, pos)
-        return super().validate(text, pos)
-
+        self.setRange(48, 72)  # 48 = C3, 72 = C5
