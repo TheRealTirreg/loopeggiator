@@ -44,7 +44,7 @@ class ArpeggiatorBlockWidget(QWidget):
         rate=1.0,
         note_length=0.2,
         ground_note=60,
-        ground_note_mute=False,
+        mute_ground_note=False,
         mode=None,
         mute=False,
         vibrato=False,
@@ -138,7 +138,7 @@ class ArpeggiatorBlockWidget(QWidget):
             rate=rate,
             note_length=note_length,
             ground_note=ground_note,
-            ground_note_mute=ground_note_mute,
+            mute_ground_note=mute_ground_note,
             mode=mode,
             mute=mute,
             vibrato=vibrato,
@@ -178,7 +178,7 @@ class ArpeggiatorBlockWidget(QWidget):
             "rate": arp.rate,
             "note_length": arp.note_length,
             "ground_note": arp.ground_note,
-            "ground_note_mute": arp.mute_ground_note,
+            "mute_ground_note": arp.mute_ground_note,
             "mode": arp.mode,
             "mute": arp.mute,
             "vibrato": arp.vibrato,
@@ -248,7 +248,7 @@ class ArpeggiatorWidget(QWidget):
         rate=1.0,  # BPM multiplier
         note_length=0.2,
         ground_note=60,  # Midi C4
-        ground_note_mute=False,
+        mute_ground_note=False,
         mode=None,
         mute=False,
         vibrato=False,
@@ -276,7 +276,7 @@ class ArpeggiatorWidget(QWidget):
             rate,
             note_length,
             ground_note,
-            ground_note_mute,
+            mute_ground_note,
             mode,
             mute,
             vibrato,
@@ -318,7 +318,7 @@ class ArpeggiatorWidget(QWidget):
 
         form_layout.addRow(checkbox_row)
         # ==================== 1) Rate (x BPM) [Discrete: 0.5, 1, 2, 4, 8, 16, 32, 64] ====================
-        self.rate_values = [0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]
+        self.rate_values = [0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0]
 
         self.rate_slider = NoScrollSlider(Qt.Orientation.Horizontal)
         self.rate_slider.setRange(0, len(self.rate_values) - 1)
@@ -357,9 +357,9 @@ class ArpeggiatorWidget(QWidget):
         self.note_length_slider.valueChanged.connect(self.on_note_length_slider_changed)
         self.note_length_spin.valueChanged.connect(self.on_note_length_spin_changed)
 
-        # ==================== 3) Ground Note [C3 (48) to C5 (72)] ====================
+        # ==================== 3) Ground Note [C1 (24) to C7 (96)] ====================
         self.ground_note_slider = NoScrollSlider(Qt.Orientation.Horizontal)
-        self.ground_note_slider.setRange(48, 72)
+        self.ground_note_slider.setRange(24, 96)  # C1 (24) to C7 (96)
         self.ground_note_slider.setValue(ground_note)
 
         self.ground_note_spin = GroundNoteSpinBox()

@@ -76,4 +76,4 @@ class MuteSpinBox(NoScrollSpinBox):
 class GroundNoteSpinBox(NoScrollSpinBox):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setRange(48, 72)  # 48 = C3, 72 = C5
+        self.setRange(24, 96)  # 24 = C1, 96 = C7
