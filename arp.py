@@ -72,7 +72,7 @@ class Arpeggiator():
         for i, offset in enumerate(self.variants):
             # Special case: If offset is -25, interpret as silence
             if self.variants_active[i]:
-                if offset == -99:
+                if offset == -25:
                     notes.append(0)  # Silence
                 else:
                     notes.append(self.ground_note + offset)

@@ -184,9 +184,9 @@ class ArpeggiatorBlockWidget(QWidget):
             "vibrato": arp.vibrato,
             "reverb": arp.reverb,
             "chorus": arp.chorus,
-            "variants_active": arp.variants_active,
-            "chords_active": arp.chords_active,
-            "variants": arp.variants
+            "variants_active": list(arp.variants_active),
+            "chords_active": list(arp.chords_active),
+            "variants": list(arp.variants)
         }
     
     def duplicate_block(self):
