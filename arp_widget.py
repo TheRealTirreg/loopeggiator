@@ -44,7 +44,7 @@ class ArpeggiatorBlockWidget(QWidget):
         rate=1.0,
         note_length=0.2,
         ground_note=60,
-        mode=Mode.UP,
+        mode=None,
         mute=False,
         vibrato=False,
         reverb=False,
@@ -245,7 +245,7 @@ class ArpeggiatorWidget(QWidget):
         rate=1.0,  # BPM multiplier
         note_length=0.2,
         ground_note=60,  # Midi C4
-        mode=Mode.UP,
+        mode=None,
         mute=False,
         vibrato=False,
         reverb=False,

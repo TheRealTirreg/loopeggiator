@@ -35,7 +35,7 @@ class InstrumentArpPanel(QWidget):
         rate=1.0,
         note_length=0.2,
         ground_note=60,
-        mode=Mode.UP,
+        mode=None,
         variants_active=None,
         chords_active=None,
         variants=None,
