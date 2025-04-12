@@ -138,6 +138,7 @@ class ArpeggiatorBlockWidget(QWidget):
             rate=rate,
             note_length=note_length,
             ground_note=ground_note,
+            ground_note_mute=ground_note_mute,
             mode=mode,
             mute=mute,
             vibrato=vibrato,
