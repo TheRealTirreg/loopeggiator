@@ -18,6 +18,8 @@ class SynthPlayer(QObject):
         self.sf_path = soundfont_path
         self.max_rows = max_rows
 
+        self.instrument_banks = [0 for i in range(self.max_rows)]
+
         self.presets = self.extract_presets(soundfont_path)
         self.presets_updated.emit()
 
@@ -31,6 +33,7 @@ class SynthPlayer(QObject):
     def change_instrument(self, channel, instrument, bank=0):
         print(f"Change instrument on channel {channel} to {instrument}")
         self.fs.program_select(channel, self.sfid, bank, instrument)
+        self.instrument_banks[channel] = bank
 
     def play_note(self, note, duration=1, velocity=100, channel=0):
         self.fs.noteon(channel, note, velocity)
@@ -65,7 +68,8 @@ class SynthPlayer(QObject):
 
             # Dispatch to fluidsynth
             if msg.type == 'program_change':
-                self.fs.program_select(channel, self.sfid, 0, msg.program)
+                print(f"Bank: {self.instrument_banks[channel]}, Program: {msg.program} in channel {channel}")
+                self.fs.program_select(channel, self.sfid, self.instrument_banks[channel], msg.program)
             elif msg.type == 'control_change':
                 if msg.control == 1:  # Modulation wheel
                     #mido.Message('control_change', control=vibrato_cc, value=value)
