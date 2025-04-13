@@ -14,6 +14,7 @@ class SynthPlayer(QObject):
 
     def __init__(self, soundfont_path, max_rows):
         super().__init__()
+        self.interrupt_flag = False
 
         self.sf_path = soundfont_path
         self.max_rows = max_rows
@@ -29,6 +30,9 @@ class SynthPlayer(QObject):
         for ch in range(self.max_rows):
             self.fs.program_select(ch, self.sfid, 0, 0)
         self.on_marker = None  # Will be set by UI
+
+    def interrupt(self):
+        self.interrupt_flag = True
 
     def change_instrument(self, channel, instrument, bank=0):
         print(f"Change instrument on channel {channel} to {instrument}")
@@ -60,6 +64,11 @@ class SynthPlayer(QObject):
         start_wall_time = time.time()
 
         for (event_time, channel, msg) in all_events:
+            if self.interrupt_flag:
+                self.interrupt_flag = False
+                print("Playback interrupted.")
+                break
+
             # Wait until it's time for this event
             now = time.time()
             wait_time = event_time - (now - start_wall_time)
@@ -81,12 +90,9 @@ class SynthPlayer(QObject):
             elif msg.type == 'note_on':
                 if msg.note == 0:  # Ignore note 0 (placeholder for silence)
                     continue
-
-                #self.fs.cc(channel, 91, 100)
                 
                 velocity = max(0, min(msg.velocity, 127))  # clip velocity
                 self.fs.noteon(channel, msg.note, velocity)
-                
 
             elif isinstance(msg, mido.MetaMessage) and msg.type == "marker":
                 if self.on_marker:

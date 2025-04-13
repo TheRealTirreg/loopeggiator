@@ -44,4 +44,5 @@ class PlaybackThread(QThread):
 
     def stop(self):
         self.running = False
+        self.synth.interrupt()
         self.synth.stop_all_sounds()
