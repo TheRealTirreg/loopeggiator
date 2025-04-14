@@ -25,6 +25,7 @@ def save_project(main_window, filename=None):
             "mute": row.mute_checkbox.isChecked(),
             "volume": row.settings_panel.volume_slider.value(),
             "instrument": row.instrument,
+            "bank": row.synth.instrument_banks[row.id],
             "arpeggiators": []
         }
 
@@ -82,11 +83,13 @@ def load_project(main_window, filename=None):
         row.settings_panel.volume_slider.setValue(row_data.get("volume", 64))
 
         target_program = row_data.get("instrument", 0)
+        target_bank = row_data.get("bank", 0)
 
         # Find the index of the first preset with this program number
         preset_index = next(
             (i for i in range(row.settings_panel.instrument_combo.count())
-            if row.settings_panel.instrument_combo.itemData(i).get("program") == target_program),
+            if row.settings_panel.instrument_combo.itemData(i).get("program") == target_program
+            and row.settings_panel.instrument_combo.itemData(i).get("bank", 0) == target_bank),
             0
         )
 
