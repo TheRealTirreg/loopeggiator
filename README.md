@@ -8,6 +8,8 @@ See requirements.txt for needed packages for installation.
 
 To run Loopeggiator: python3 loopeggiator.py 
 
+![a screenshot](image.png)
+
 ## Ideas
 
 - [x] One loop should have length max(all rows) (merger les arpeggios de TOUT, jouer un seul loop.)
